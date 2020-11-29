@@ -1,5 +1,5 @@
 import pymysql
-#Из модуля pyowm получаем функцию для получения стандартного конфига
+#Из под модуля pyowm.utils.config получаем функцию для получения стандартного конфига
 from pyowm.utils.config import get_default_config
 #Подключаемся к базе данных
 con = pymysql.connect('localhost', 'bot', 
