@@ -7,9 +7,9 @@ con = pymysql.connect('localhost', 'bot',
 #Создаём курсор.Курсор нужен для выполнений опереаций с базой данных
 cur = con.cursor()
 #Токен взятый с @BotFather
-token = '1470281360:AAE7zCSqaAmV2dsmtqfHQ8zd1G0WRhVWoEA'
+token = '<token>'
 #Токен взятый с сайта openweathermap.org
-weather_token = '2f3a07a16302c4c464ab42cd11a6b27b'
+weather_token = '<token owm>'
 #Получаем стандартный конфиг для pyowm
 config_dict = get_default_config()
 #Устонавливаем русский язык в этом конфиге
