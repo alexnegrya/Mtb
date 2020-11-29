@@ -22,7 +22,7 @@ except:
 
 #Убираем вывод ошибке о прерывание
 signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
-#Инциализация бота
+#Инциализация бота и погоды
 bot = telebot.TeleBot(config.token)
 owm = pyowm.OWM(config.weather_token, config.config_dict)
 print("Чтобы начать запуск бота напишите 'Запуск' или напишите 'Настройки' для входа в настройки бота")
@@ -178,7 +178,6 @@ if options == "Запуск":
 			bot.register_next_step_handler(msg, admin_send_msg_part1)
 		else:
 			bot.register_next_step_handler(msg, "Введите то что в списке")
-#Ебанный telebot иза него надо создовать две функции
 #Первая функция смотрим chat id
 	def admin_send_msg_part1(message):
 		global chat_id
