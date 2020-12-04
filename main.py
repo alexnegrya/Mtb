@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #Пытаемся импортировать нужные библеотеки
 try:
+	import sqlite3
 	import telebot
 	import config
 	import pyowm
@@ -9,39 +10,47 @@ try:
 	import json
 	import signal
 	import sys
+	import sqlite3
 	from bs4 import BeautifulSoup as BS
 	#Импортируем класс datetime из модуля datetime
 	from datetime import datetime
 	from pyowm.utils.config import get_default_config
 	from telebot import types
 except:
-	print("Ошибка с модулями!Устоновите их или обновите")
-	exit()
-
-
+	print("Ошибка связанная с модулями!")
 
 #Убираем вывод ошибке о прерывание
 signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
-#Инциализация бота и погоды
+#Инциализация бота
 bot = telebot.TeleBot(config.token)
 owm = pyowm.OWM(config.weather_token, config.config_dict)
+
 print("Чтобы начать запуск бота напишите 'Запуск' или напишите 'Настройки' для входа в настройки бота")
 options = input(":")
 if options == "Настройки":
 	print(
-		"Вы вошли в настройки чтобы изменить какие-то значения используйте config.var = 'ваше значение'.\nСписок доступных переменных:\n1)token\n2)weather_token\n3)on_start_msg\n4)global_iteration_news\nИзмения будут приняты ТОЛЬКО для этого запуска"
+		"Вы вошли в настройки чтобы изменить какие-то значения используйте config.var = 'ваше значение'.\nСписок доступных переменных:\n1)token\n2)weather_token\n3)on_start_msg\n4)global_iteration_news\n5)sqlite\nИзмения будут приняты ТОЛЬКО для этого запуска"
 		)
 	exec(input(":"))
 	options = "Запуск"
 if options == "Запуск":
 	#Смотрим если есть сообщение при старте
 	if config.on_start_msg != "":
-		#Если есть сообщение то смотрим все чат айди 
-		config.cur.execute("SELECT Chat_Id FROM `users`")
-		rows = config.cur.fetchall()
-		#И в цикле выводим  сообщение при старте в чаты
-		for row in rows:
-			bot.send_message(row[0], config.on_start_msg)
+		if config.sqlite == True:
+			con = sqlite3.connect('db.db')
+			cur = con.cursor()
+			cur.execute("SELECT Chat_id FROM users")
+			rows = cur.fetchall()
+			for row in rows:
+				bot.send_message(row[0], config.on_start_msg)
+			con.close()
+		else:
+			#Если есть сообщение то смотрим все чат айди 
+			config.cur.execute("SELECT Chat_Id FROM `users`")
+			rows = config.cur.fetchall()
+			#И в цикле выводим  сообщение при старте в чаты
+			for row in rows:
+				bot.send_message(row[0], config.on_start_msg)
 	start = "[Консоль]Бот запущен и работает ["+str(datetime.now())+"]\n"
 	print("[Консоль]Бот запущен и работает ["+str(datetime.now())+"]")
 	handle = open("logs.txt", "a")
@@ -73,21 +82,45 @@ if options == "Запуск":
 		markup.add(item1, item2, item3, item4)
 	    #Ответ на команду /start
 		bot.send_message(message.chat.id, "Привет странник!\nЧего изволишь?", reply_markup=markup)
-		#Смотрим нету ли пользователя в базе данных
-		user_db = config.cur.execute("SELECT * FROM `users` Where Chat_Id='"+str(message.chat.id)+"'")
-		#Если нету добовляем
-		if user_db == 0:
-			config.cur.execute(
-				"INSERT INTO `users` (`Chat_Id`, `Username`) VALUES (%s,%s)",
-				(message.chat.id,message.from_user.username)
-				)
-			config.con.commit()
-			log_d = "[База данных] Добавлен новый пользователь в базу данных ["+str(datetime.now())+"]\n"
-			print("[База данных] Добавлен новый пользователь в базу данных ["+str(datetime.now())+"]")
-			handle = open("logs.txt", "a")
-			handle.write(log_d)
-			handle.close()
-
+		if config.sqlite == True:
+			#Подключаемся к базе данных sqlite
+			con = sqlite3.connect('db.db')
+			#Создаём курсор
+			cur = con.cursor()
+			#Ищем пользователя у которого такой chat id
+			cur.execute("SELECT * FROM users Where Chat_id = '"+str(message.chat.id)+"'")
+			#Выносим результат из базы
+			row = cur.fetchall()
+			#Смотрим длину результат
+			user = len(row)
+			#0-Пользователя нет
+			#1-есть
+			#Если пользователя нет то заносим его базу данных sqlite
+			if user == 0:
+				cur.execute("INSERT INTO users(Chat_id,Username) VALUES ("+str(message.chat.id)+",'"+message.from_user.username+"')")
+				con.commit()
+				log_d = "[База данных] Добавлен новый пользователь в базу данных ["+str(datetime.now())+"]\n"
+				print("[База данных] Добавлен новый пользователь в базу данных ["+str(datetime.now())+"]")
+				handle = open("logs.txt", "a")
+				handle.write(log_d)
+				handle.close()
+				con.close()
+		else:
+			#Смотрим нету ли пользователя в базе данных mysql
+			user_db = config.cur.execute("SELECT * FROM `users` Where Chat_Id='"+str(message.chat.id)+"'")
+			#Если нету добовляем
+			if user_db == 0:
+				config.cur.execute(
+					"INSERT INTO `users` (`Chat_Id`, `Username`) VALUES (%s,%s)",
+					(message.chat.id,message.from_user.username)
+					)
+				config.con.commit()
+				log_d = "[База данных] Добавлен новый пользователь в базу данных ["+str(datetime.now())+"]\n"
+				print("[База данных] Добавлен новый пользователь в базу данных ["+str(datetime.now())+"]")
+				handle = open("logs.txt", "a")
+				handle.write(log_d)
+				handle.close()
+#
 	@bot.message_handler(content_types=["text"])
 	def main(message):
 		#Если у пользователя нету имени то даём ему имя 'Неизвестный'
@@ -103,7 +136,7 @@ if options == "Запуск":
 			handle.write(log_n)
 			handle.close()
 			#Парсим сайт point.md
-			r = requests.get('https://point.md/ru/novosti/obschestvo/')
+			r = requests.get('https://point.md/')
 			html = BS(r.content, 'html.parser')
 			posts = []
 			#В цикле выводим все заголовки статей и их време также мы ещё выводим время статьи
@@ -169,31 +202,55 @@ if options == "Запуск":
 		else:
 			msg = bot.send_message(message.chat.id, "Ваш запрос не понятен")
 	def admin(message):
-		command = message.text
-		if command == "1":
-			msg = bot.send_message(message.chat.id, "Какое сообщение вы хотите отослать")
-			bot.register_next_step_handler(msg, admin_send_msg_to_all)
-		elif command == "2":
-			msg = bot.send_message(message.chat.id, "Кому вы хотите отослать сообщение")
-			bot.register_next_step_handler(msg, admin_send_msg_part1)
-		else:
-			bot.register_next_step_handler(msg, "Введите то что в списке")
-#Первая функция смотрим chat id
-	def admin_send_msg_part1(message):
-		global chat_id
-		who = message.text
-		config.cur.execute("SELECT `Chat_Id` FROM `users` Where `Username`='"+who+"'")
-		chat_id = config.cur.fetchone()
-		msg = bot.send_message(message.chat.id, "Кокое сообщение вы хотите отослать")
-		bot.register_next_step_handler(msg, admin_send_msg_part2)
-#Вторая функция отправляем сообщение
-	def admin_send_msg_part2(message):
 		try:
-			msg = message.text
-			bot.send_message(chat_id[0], msg)
-			bot.send_message(message.chat.id, "Сообщение отправленно")
+			command = message.text
+			if command == "1":
+				msg = bot.send_message(message.chat.id, "Какое сообщение вы хотите отослать")
+				bot.register_next_step_handler(msg, admin_send_msg_to_all)
+			elif command == "2":
+				msg = bot.send_message(message.chat.id, "Кому вы хотите отослать сообщение")
+				bot.register_next_step_handler(msg, admin_send_msg_step_1)
+			else:
+				bot.register_next_step_handler(msg, "Введите то что в списке")
 		except:
-			bot.send_message(message.chat.id, "Пользователь не найден")
+			bot.send_message(message.chat.id, "Введите то что в списке")
+#Первая функция смотрим chat id
+	def admin_send_msg_step_1(message):
+		global chat_id,who
+		who = message.text
+		if config.sqlite == True:
+			con = sqlite3.connect('db.db')
+			cur = con.cursor()
+			cur.execute("SELECT Chat_id FROM users Where Username = '"+who+"'")
+			chat_id = cur.fetchone()
+			length_chat_id = len(chat_id)
+			if length_chat_id == 1:
+				msg = bot.send_message(message.chat.id, "Какое сообщение вы хотите отослать")
+				bot.register_next_step_handler(msg, admin_send_msg_step_2)
+			else:
+				bot.send_message(message.chat.id, "Пользователь не найден")
+		else:
+			config.cur.execute("SELECT `Chat_Id` FROM `users` Where `Username`='"+who+"'")
+			chat_id = config.cur.fetchone()
+			if chat_id == None:
+				bot.send_message(message.chat.id, "Пользователь не найден")
+			else:
+				msg = bot.send_message(message.chat.id, "Какое сообщение вы хотите отослать")
+				bot.register_next_step_handler(msg, admin_send_msg_step_2)
+#Вторая функция отправляем сообщение
+	def admin_send_msg_step_2(message):
+		if message.from_user.username == None:
+			message.from_user.username = "Неизвестный"
+		msg = message.text
+		bot.send_message(chat_id[0], msg)
+		bot.send_message(message.chat.id, "Сообщение отправленно")
+		log_s_a = "[Админ] " + message.from_user.username + " отравил сообщение "+msg+" пользователю "+who+" ["+str(datetime.now())+"]\n"
+		#Выводим лог
+		print("[Админ] " + message.from_user.username + " отравил сообщение "+msg+" пользователю "+who+" ["+str(datetime.now())+"]")
+		#Пишем лог в файл
+		handle = open("logs.txt", "a")
+		handle.write(log_s_a)
+		handle.close()
 #------------
 #Функция для отсылки сообщений всем пользователем бота
 	def admin_send_msg_to_all(message):
