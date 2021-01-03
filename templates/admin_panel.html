@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{%block title%}
+Админ панель
+{%endblock%}
+{%block header%}
+Админ панель
+{%endblock%}
+{%block main%}
+{%if action == "main"%}
+<a href="/admin_panel?action=send_message_to_user">Написать пользователю</a><br>
+<a href="/admin_panel?action=send_message_to_all">Написать от имени бота</a><br>
+{%if data%}
+{{data}}
+{% endif %}
+{%elif action == "send_message_to_all"%}
+<form action="/admin_panel" method="post">
+Сообщение:<input name="msg_to_all"><br>
+<input type="hidden" value="send_message_to_all" name="type_form">
+<input type="submit" value="Отправить сообщение">
+</form>
+{%else%}
+<form action="/admin_panel" method="post">
+<input type="hidden" value="send_message_to_user" name="type_form">
+Никнейм:<input name="nicname"><br>
+Сообщение:<input name="msg"><br>
+<input type="submit" value="Отправить сообщение">
+</form>
+{% endif %}
+{%endblock%}
