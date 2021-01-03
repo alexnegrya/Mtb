@@ -44,7 +44,7 @@ if system == "Linux" or system == "Windows":
     files_dir = glob.glob("*.py")
     # Если нет в папке этих файлов устонавливаем их
     if files_dir != files:
-        url = "https://github.com/roaldiopi/Cumutru/archive/main.zip"
+        url = "https://github.com/roaldiopi/Kumatru/archive/main.zip"
         r = requests.get(url)
         with open("main.zip", "wb") as code:
             code.write(r.content)
