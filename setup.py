@@ -182,7 +182,7 @@ INSERT INTO subscriptions(Month,Subscriptions) VALUES ('Изменяем чис�
             input()
             exit()
         else:
-            conn = sqlite3.connect("Cumutru-main/db.db")
+            conn = sqlite3.connect("Kumutru-main/db.db")
             c = conn.cursor()
             c.execute(
                 "CREATE TABLE users(Chat_Id INTEGER,Username TEXT,first_name TEXT,last_name TEXT,Registration_date TEXT)"
