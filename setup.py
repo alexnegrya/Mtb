@@ -133,7 +133,7 @@ INSERT INTO subscriptions(Month,Subscriptions) VALUES ('Изменяем чис�
             input()
             os.system("sudo mysql")
         else:
-            conn = sqlite3.connect("Cumutru-main/db.db")
+            conn = sqlite3.connect("Kumutru-main/db.db")
             c = conn.cursor()
             # Создаём таблицу с пользователями
             c.execute(
