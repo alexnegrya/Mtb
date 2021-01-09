@@ -108,7 +108,7 @@ if sqlite==False:
 	cur = con.cursor()"""
     )
     print("Записаваем ввёденные данные в конфиг")
-    with open("Kumutru-main/config.py", "w", encoding="utf-8") as f:
+    with open("Kumatru-main/config.py", "w", encoding="utf-8") as f:
         f.write(config)
     for module in requirements:
         os.system("pip3 install "+module)
