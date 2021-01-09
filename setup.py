@@ -194,12 +194,12 @@ INSERT INTO subscriptions(Month,Subscriptions) VALUES ('Изменяем чис�
             # Наполняем таблицу с подписками нужными данными
             for x in range(1, 10):
                 c.execute(
-                    "INSERT INTO subscriptions(Month,Subscriptions) VALUES ('0"+x+"',0)"
+                    "INSERT INTO subscriptions(Month,Subscriptions) VALUES ('0"+str(x)+"',0)"
                 )
             conn.commit()
             for x in range(10, 13):
                 c.execute(
-                    "INSERT INTO subscriptions(Month,Subscriptions) VALUES ('"+x+ "',0)"
+                    "INSERT INTO subscriptions(Month,Subscriptions) VALUES ('"+str(x)+ "',0)"
                 )
             conn.commit()
             # -------------
