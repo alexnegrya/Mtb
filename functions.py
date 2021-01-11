@@ -1,7 +1,6 @@
 import requests
 import json
 from datetime import datetime
-from bs4 import BeautifulSoup as BS
 
 
 def get_date():
@@ -31,8 +30,11 @@ def file(data, file, t, method):
             return True
 
 
-def write_log(log):
-    console_log = log.replace("\n", "")
-    print(console_log)
+def write_log(log,literals_in_console):
+    if literals_in_console:
+        print(log)
+    else:
+        console_log = log.replace("\n", "")
+        print(console_log)
     with open("logs.txt", "a", encoding="utf-8") as f:
         f.write(log)

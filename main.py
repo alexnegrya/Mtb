@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # Пытаемся импортировать нужные библеотеки
 try:
+    import functions
+    import sys
     import sqlite3
     import telebot
     import config
@@ -8,19 +10,17 @@ try:
     import wikipedia
     import json
     import signal
-    import sys
     import sqlite3
-    import functions
     import random
     from bs4 import BeautifulSoup as BS
-
     # Импортируем класс datetime из модуля datetime
     from datetime import datetime
     from pyowm.utils.config import get_default_config
     from telebot import types
 except ModuleNotFoundError:
+    error = sys.exc_info()
     functions.write_log(
-        "[Ошибка] Какой-то модуль не устоновлен!Перепроверьте список устоновленных модулей ["+ str(datetime.now())+ "]\n"
+        "[Ошибка] Какой-то модуль не устоновлен!Перепроверьте список устоновленных модулей\nОшибка:"+str(error[1]),True
     )
     exit(1)
 
@@ -73,7 +73,7 @@ if options == "Запуск":
                 bot.send_message(row[0], config.on_start_msg)
     # Выводим лог
     functions.write_log(
-        "[Консоль] Бот запущен и работает [" + str(datetime.now()) + "]\n"
+        "[Консоль] Бот запущен и работает [" + str(datetime.now()) + "]\n",False
     )
     # Функция на команду старт
     @bot.message_handler(commands=["start"])
@@ -85,7 +85,7 @@ if options == "Запуск":
             )
         # Выводим лог
         functions.write_log(
-            "[Консоль] "+ message.from_user.username + " использовал команду start [" + str(datetime.now()) + "]\n"
+            "[Консоль] "+ message.from_user.username + " использовал команду start [" + str(datetime.now()) + "]\n",False
         )
         # Создаём клавиатуру
         # Подгоняем по размерам
@@ -140,7 +140,7 @@ VALUES ("""
                 )
                 con.commit()
                 functions.write_log(
-                    "[База данных] Добавлен новый пользователь в базу данных [" + str(datetime.now()) + "]\n"
+                    "[База данных] Добавлен новый пользователь в базу данных [" + str(datetime.now()) + "]\n",False
                 )
                 con.close()
         else:
@@ -162,7 +162,7 @@ VALUES ("""
                 )
                 config.con.commit()
                 functions.write_log(
-                    "[База данных] Добавлен новый пользователь в базу данных ["+ str(datetime.now()) + "]\n"
+                    "[База данных] Добавлен новый пользователь в базу данных ["+ str(datetime.now()) + "]\n",False
                 )
 
     @bot.message_handler(content_types=["text"])
@@ -176,7 +176,7 @@ VALUES ("""
         if message.text == "Новости":
             # Выводим лог
             functions.write_log(
-                "[Консоль] " + message.from_user.username + " использовал кнопку новости [" + str(datetime.now()) + "]\n"
+                "[Консоль] " + message.from_user.username + " использовал кнопку новости [" + str(datetime.now()) + "]\n",False
             )
             # Парсим сайт point.md
             r_html = functions.get_html("https://point.md/")
@@ -204,14 +204,14 @@ VALUES ("""
         elif message.text == "Погода":
             # Выводим лог
             functions.write_log(
-                "[Консоль] " + message.from_user.username + " использовал кнопку Погода [" + str(datetime.now()) + "]\n"
+                "[Консоль] " + message.from_user.username + " использовал кнопку Погода [" + str(datetime.now()) + "]\n",False
             )
             msg = bot.send_message(message.chat.id, "Введи название города")
             bot.register_next_step_handler(msg, weather)
         elif message.text == "Школа":
             # Выводим лог
             functions.write_log(
-                "[Консоль] "+ message.from_user.username + " использовал кнопку школа [" + str(datetime.now()) + "]\n"
+                "[Консоль] "+ message.from_user.username + " использовал кнопку школа [" + str(datetime.now()) + "]\n",False
             )
             msg_school = bot.send_message(
                 message.chat.id,
@@ -221,7 +221,7 @@ VALUES ("""
         elif message.text == "Цитата":
             # Выводим лог
             functions.write_log(
-                "[Консоль] "+ message.from_user.username+ " использовал кнопку цитата ["+ str(datetime.now())+ "]\n"
+                "[Консоль] "+ message.from_user.username+ " использовал кнопку цитата ["+ str(datetime.now())+ "]\n",False
             )
             quote = functions.file("", "quotes.json", "json", "r")
             rand_int = random.randint(0, 10266)
@@ -240,7 +240,7 @@ VALUES ("""
 2)Отослать сообщение определенному человеку""",
             )
             functions.write_log(
-                "[Админ панель] " + message.from_user.username + " зашёл в администраторскую  панель [" + str(datetime.now()) + "]\n"
+                "[Админ панель] " + message.from_user.username + " зашёл в администраторскую  панель [" + str(datetime.now()) + "]\n",False
             )
             bot.register_next_step_handler(msg, admin)
         else:
@@ -302,7 +302,7 @@ VALUES ("""
         bot.send_message(chat_id[0], msg)
         bot.send_message(message.chat.id, "Сообщение отправленно")
         functions.write_log(
-            "[Админ] "+ message.from_user.username + " отравил сообщение " + msg + " пользователю " + who+ " ["+ str(datetime.now()) + "]\n"
+            "[Админ] "+ message.from_user.username + " отравил сообщение " + msg + " пользователю " + who+ " ["+ str(datetime.now()) + "]\n",False
         )
 
     # ------------
@@ -370,7 +370,7 @@ VALUES ("""
             )
         except pyowm.commons.exceptions.UnauthorizedError:
             functions.write_log(
-                "[Ошибка] Запрос не был выполнен так как неправильный api ключ ["+ str(datetime.now()) + "]\n"
+                "[Ошибка] Запрос не был выполнен так как неправильный api ключ ["+ str(datetime.now()) + "]\n",False
                 )
             bot.send_message(message.chat.id, "Произошла внутрения ошибка")
         except:

@@ -39,21 +39,27 @@ if system == "Linux" or system == "Windows":
         else:
             print("Введите то что указано в списке")
     # Указываем какие файлы на py должны быть
-    files = ["main.py", "setup.py", "config.py", "web.py"]
+    files = ["config.py", "functions.py", "main.py", "setup.py","web.py"]
     # Смотрим файлы в папке
     files_dir = glob.glob("*.py")
+    downloaded = False
     # Если нет в папке этих файлов устонавливаем их
     if files_dir != files:
-        url = "https://github.com/roaldiopi/Kumatru/archive/main.zip"
-        r = requests.get(url)
-        with open("main.zip", "wb") as code:
-            code.write(r.content)
-        # Разахривируем файлы
-        zip = zipfile.ZipFile("main.zip")
-        zip.extractall()
-        zip.close()
-        # Удаляем zip архива
-        os.remove("main.zip")
+    	downloaded = True
+    	print("Скачиваем архив")
+    	print( files_dir)
+    	url = "https://github.com/roaldiopi/Kumatru/archive/main.zip"
+    	r = requests.get(url)
+    	with open("main.zip", "wb") as f:
+    		f.write(r.content)
+    	#Разархивируем файлы
+    	print("Разархивируем файлы")
+    	zip = zipfile.ZipFile("main.zip")
+    	zip.extractall()
+    	zip.close()
+    	#Удаляем zip архива
+    	print("Удаляем zip файл")
+    	os.remove("main.zip")
     if db == "sqlite":
         sqlite = True
         # Указываем данные по умолчанию
@@ -108,8 +114,12 @@ if sqlite==False:
 	cur = con.cursor()"""
     )
     print("Записаваем ввёденные данные в конфиг")
-    with open("Kumatru-main/config.py", "w", encoding="utf-8") as f:
-        f.write(config)
+    if downloaded:
+    	with open("Kumatru-main/config.py", "w", encoding="utf-8") as f:
+       		f.write(config)
+    else:
+    	with open("config.py", "w", encoding="utf-8") as f:
+       		f.write(config)
     for module in requirements:
         os.system("pip3 install "+module)
     if system == "Linux":
@@ -133,36 +143,39 @@ INSERT INTO subscriptions(Month,Subscriptions) VALUES ('Изменяем чис�
             input()
             os.system("sudo mysql")
         else:
-            conn = sqlite3.connect("Kumatru-main/db.db")
-            c = conn.cursor()
+        	if downloaded:
+        		conn = sqlite3.connect("Kumatru-main/db.db")
+        	else:
+        		conn = sqlite3.connect("db.db")
+        	c = conn.cursor()
             # Создаём таблицу с пользователями
-            c.execute(
-                "CREATE TABLE users(Chat_Id INTEGER,Username TEXT,first_name TEXT,last_name TEXT,Registration_date TEXT)"
-            )
+        	c.execute(
+            	"CREATE TABLE users(Chat_Id INTEGER,Username TEXT,first_name TEXT,last_name TEXT,Registration_date TEXT)"
+            	)
             # Создаём таблицу с подписками
-            c.execute(
-                "CREATE TABLE subscriptions(Month TEXT,Subscriptions INTEGER)"
-                )
+        	c.execute(
+        		"CREATE TABLE subscriptions(Month TEXT,Subscriptions INTEGER)"
+        		)
             # Наполняем таблицу с подписками нужными данными
-            for x in range(1, 10):
-                c.execute(
-                    "INSERT INTO subscriptions(Month,Subscriptions) VALUES ('0"+x+ "',0)"
-                )
-            conn.commit()
-            for x in range(10, 13):
-                c.execute(
-                    "INSERT INTO subscriptions(Month,Subscriptions) VALUES ('"+x+ "',0)"
-                )
-            conn.commit()
+        	for x in range(1, 10):
+        		c.execute(
+        			"INSERT INTO subscriptions(Month,Subscriptions) VALUES ('0"+str(x)+ "',0)"
+        			)
+        	conn.commit()
+        	for x in range(10, 13):
+        		c.execute(
+        			"INSERT INTO subscriptions(Month,Subscriptions) VALUES ('"+str(x)+ "',0)"
+        			)
+        	conn.commit()
             # -------------
-            print("Устоновка завершена")
-            exit()
+        	print("Устоновка завершена")
+        	exit()
     else:
         if db == "mysql":
             print("Скачиваем mysql")
             url = "https://dev.mysql.com/get/Downloads/MySQLInstaller/mysql-installer-community-8.0.22.0.msi"
             r = requests.get(url)
-            with open("Cumutru-main/mysql.msi", "wb") as code:
+            with open("Kumatru-main/mysql.msi", "wb") as code:
                 code.write(r.content)
             print(
                 """Итак мы почти закончили осталось два шага

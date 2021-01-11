@@ -1,15 +1,23 @@
-import sys
-import config
-import functions
-import sqlite3
-import matplotlib.pyplot as plt
-import numpy as np
-import telebot
-from flask import Flask, render_template, request
+try:
+    import functions
+    import sys
+    import config
+    import traceback
+    import sqlite3
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import telebot
+    from flask import Flask, render_template, request
+except ModuleNotFoundError:
+    error = sys.exc_info()
+    functions.write_log(
+        "[Ошибка] Какой-то модуль не устоновлен!Перепроверьте список устоновленных модулей\nОшибка:"+str(error[1]),True
+    )
+    exit(1)
 
 app = Flask(__name__)
 bot = telebot.TeleBot(config.token)
-
+app
 
 @app.route("/", methods=["POST", "GET"])
 def index():
@@ -305,3 +313,5 @@ def information():
         version_python=version_python,
         db=db,
     )
+if __name__ == '__main__':
+    app.run(debug = False)
