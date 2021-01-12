@@ -5,7 +5,7 @@
 3)Считать числа и быстро искать в wiki<br>
 4)Также умеет давать цитатки<br>
 <b>Устоновка:</b><br>
-1)Скачиваем интерпретатор python с сайта https://www.python.org/(или pypy https://www.pypy.org/)<br>
+1)Скачиваем интерпретатор python с сайта https://www.python.org/ (или pypy https://www.pypy.org/)<br>
 2)Скачиваем архив или качаем только файл setup.py<br>
 3)Запускаем устоновщик<br>
 
