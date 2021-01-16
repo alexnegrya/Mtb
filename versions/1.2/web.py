@@ -8,11 +8,10 @@ try:
     import numpy as np
     import telebot
     from flask import Flask, render_template, request
-    from importlib import reload
 except ModuleNotFoundError:
     error = sys.exc_info()
     functions.write_log(
-        "[Ошибка] Какой-то модуль не устоновлен!Перепроверьте список устоновленных модулей\nОшибка:"+str(error[1])+"\n",True
+        "[Ошибка] Какой-то модуль не устоновлен!Перепроверьте список устоновленных модулей\nОшибка:"+str(error[1]),True
     )
     exit(1)
 
@@ -229,31 +228,19 @@ def admin_panel():
 
 @app.route("/settings", methods=["GET", "POST"])
 def settings():
-    settings = {
-	'token' : config.token,
-	'weather_token' : config.weather_token,
-	'on_start_msg' : config.on_start_msg,
-	'global_iteration_news' : config.global_iteration_news,
-	'admin_password' : config.admin_password,
-	'log_reading_frequency' : config.log_reading_frequency,
-	'sqlite' : config.sqlite,
-	'mysql_user' : config.mysql_user,
-	'mysql_password' : config.mysql_password,
-	'mysql_db' : config.mysql_db,
-	}
     # Если есть запрос типа POST
     if request.method == "POST":
         # Читаем данные из формы
-        settings['token']=telegram_token = request.form.get("telegram_token")
-        settings['weather_token']=owm_token = request.form.get("owm_token")
-        settings['on_start_msg']=start_msg = request.form.get("start_msg")
-        settings['global_iteration_news']=global_iteration_news = request.form.get("iteration_news")
-        settings['admin_password']=admin_panel_password = request.form.get("admin_panel_password")
-        settings['sqlite']=sqlite = request.form.get("Sqlite")
-        settings['log_reading_frequency']=log_reading_frequency = request.form.get("log_reading_frequency")
-        settings['mysql_user']=mysql_user = request.form.get("mysql_user")
-        settings['mysql_password']=mysql_password = request.form.get("mysql_password")
-        settings['mysql_db']=mysql_db = request.form.get("mysql_db")
+        telegram_token = request.form.get("telegram_token")
+        owm_token = request.form.get("owm_token")
+        start_msg = request.form.get("start_msg")
+        global_iteration_news = request.form.get("iteration_news")
+        admin_panel_password = request.form.get("admin_panel_password")
+        sqlite = request.form.get("Sqlite")
+        log_reading_frequency = request.form.get("log_reading_frequency")
+        mysql_user = request.form.get("mysql_user")
+        mysql_password = request.form.get("mysql_password")
+        mysql_db = request.form.get("mysql_db")
         # Если данные mysql не указаны то присваеваем значения им из конфига
         if mysql_user == None and mysql_password == None and mysql_db == None:
             mysql_user = config.mysql_user
@@ -295,23 +282,21 @@ if sqlite==False:
 	try:
 		con = pymysql.connect('localhost', mysql_user, mysql_password, mysql_db)
 	except pymysql.err.OperationalError:
-		functions.write_log(
-            '[Ошибка] Невозможно подключиться к базе данных!Проверьте правильность данных для подключенния ['+functions.get_date()+']',False
-        )
+		functions.write_log('''[Ошибка] Невозможно подключиться к базе данных!Проверьте правильность данных для подключенния ['''+str(datetime.now())+''']
+''')
 		exit(1)
 	#Создаём курсор.Курсор нужен для выполнений операций с базой данных
 	cur = con.cursor()
 		"""
         )
         # Пишем в файл
-        with open("config.py", "w", encoding="utf-8") as f:
-            f.write(new_config)
+        functions.file(new_config, "config.py", "text", "w")
         return render_template(
-            "settings.html", con=settings, date=functions.get_date(), msg="Успех"
+            "settings.html", con=config, date=functions.get_date(), msg="Успех"
         )
 
     else:
-        return render_template("settings.html", con=settings, date=functions.get_date())
+        return render_template("settings.html", con=config, date=functions.get_date())
 
 
 @app.route("/information")

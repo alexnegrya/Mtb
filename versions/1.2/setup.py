@@ -1,5 +1,5 @@
 import os
-os.system("pip3 install requests -q")
+os.system("pip3 install requests")
 import requests
 import zipfile
 import sqlite3
@@ -21,31 +21,34 @@ if system == "Linux" or system == "Windows":
         "PyMySQL",
         "pyowm",
         "wikipedia",
+        "DateTime",
         "beautifulsoup4",
         "pyTelegramBotAPI",
         "flask",
-        "numpy",
-        "matplotlib"
+        "lxml",
     ]
     # Спрашиваем у пользователя нужные данные
     bot_token = input("Напишите токен взятый у @BotFather:")
     weather_token = input("Напишите токен взятый у openweathermap.org:")
     secret_key = input("Укажите пароль для админки:")
+    # Просим человека дать ответ которые в вариантах
     while True:
         db = input("Какую базу данных вы хотите использовать mysql или sqlite?:")
         if db == "sqlite" or db == "mysql":
             break
         else:
             print("Введите то что указано в списке")
-    #Проверка скачен ли архив с файлами
-    directory = os.listdir(path=".")
-    if 'main.py' in directory:
+    # Указываем какие файлы на py должны быть
+    files = ["config.py", "functions.py", "main.py", "setup.py","web.py"]
+    # Смотрим файлы в папке
+    files_dir = glob.glob("*.py")
+    downloaded = False
+    # Если нет в папке этих файлов устонавливаем их
+    if files_dir != files:
     	downloaded = True
-    else:
-    	downloaded = False
-    if downloaded == False:
     	print("Скачиваем архив")
-    	url = "https://github.com/roaldiopi/Mtb/archive/main.zip"
+    	print( files_dir)
+    	url = "https://github.com/roaldiopi/Kumatru/archive/main.zip"
     	r = requests.get(url)
     	with open("main.zip", "wb") as f:
     		f.write(r.content)
@@ -98,31 +101,27 @@ mysql_user = '"""+ mysql_user + """'
 mysql_password = '"""+ mysql_password + """'
 #База данных mysql
 mysql_db = '"""+ mysql_db + """'
-#Игнорируем ли ошибки
-ignore_errors = False
 if sqlite==False:
 	import pymysql
 	#Подключаемся к базе данных
 	try:
 		con = pymysql.connect('localhost', mysql_user, mysql_password, mysql_db)
 	except pymysql.err.OperationalError:
-		functions.write_log(
-            '[Ошибка] Невозможно подключиться к базе данных!Проверьте правильность данных для подключенния ['+functions.get_date()+']',False
-        )
+		functions.write_log('''[Ошибка] Невозможно подключиться к базе данных!Проверьте правильность данных для подключенния ['''+str(datetime.now())+''']
+''')
 		exit(1)
 	#Создаём курсор.Курсор нужен для выполнений опереаций с базой данных
 	cur = con.cursor()"""
     )
     print("Записаваем ввёденные данные в конфиг")
-    if downloaded == True:
-    	with open("config.py", "w", encoding="utf-8") as f:
+    if downloaded:
+    	with open("Kumatru-main/config.py", "w", encoding="utf-8") as f:
        		f.write(config)
     else:
-    	with open("Mtb-main/config.py", "w", encoding="utf-8") as f:
+    	with open("config.py", "w", encoding="utf-8") as f:
        		f.write(config)
-    print("Устонавливаем необходимые зависимости")
     for module in requirements:
-        os.system("pip3 install "+module+" -q")
+        os.system("pip3 install "+module)
     if system == "Linux":
         if db == "mysql":
             os.system("apt install mysql")
@@ -144,10 +143,10 @@ INSERT INTO subscriptions(Month,Subscriptions) VALUES ('Изменяем чис�
             input()
             os.system("sudo mysql")
         else:
-        	if downloaded == True:
-        		conn = sqlite3.connect("db.db")
+        	if downloaded:
+        		conn = sqlite3.connect("Kumatru-main/db.db")
         	else:
-        		conn = sqlite3.connect("Mtb-main/db.db")
+        		conn = sqlite3.connect("db.db")
         	c = conn.cursor()
             # Создаём таблицу с пользователями
         	c.execute(
@@ -176,7 +175,7 @@ INSERT INTO subscriptions(Month,Subscriptions) VALUES ('Изменяем чис�
             print("Скачиваем mysql")
             url = "https://dev.mysql.com/get/Downloads/MySQLInstaller/mysql-installer-community-8.0.22.0.msi"
             r = requests.get(url)
-            with open("mysql.msi", "wb") as code:
+            with open("Kumatru-main/mysql.msi", "wb") as code:
                 code.write(r.content)
             print(
                 """Итак мы почти закончили осталось два шага
@@ -196,10 +195,7 @@ INSERT INTO subscriptions(Month,Subscriptions) VALUES ('Изменяем чис�
             input()
             exit()
         else:
-            if downloaded == True:
-                conn = sqlite3.connect("Mtb-main/db.db")
-            else:
-        	    conn = sqlite3.connect("db.db")
+            conn = sqlite3.connect("Kumutru-main/db.db")
             c = conn.cursor()
             c.execute(
                 "CREATE TABLE users(Chat_Id INTEGER,Username TEXT,first_name TEXT,last_name TEXT,Registration_date TEXT)"

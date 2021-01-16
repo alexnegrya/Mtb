@@ -2,6 +2,9 @@
 {%block title%}
 База данных
 {%endblock%}
+{%block header%}
+База данных
+{%endblock%}
 {%block main%}
 <div id="tables">
     {%if action == "main"%}
@@ -23,13 +26,15 @@
     <p style="color:green">{{data}}</p>
     {%endif%}
     {%else%}
+Данные в таблице {{ action }}:<br>
    <table border="1">
    <tr>
-    <!--Разбираем column_names и если cубд sqlite берём второй элемент при разборе  если иначе то берём первый -->
     {%for el in column_names%}
     {% if db_system == "sqlite" %}
+    <!-- Если субд sqlite читаем 2 элемент кортежа -->
     <th>{{el[1]}}</th>
     {%else%}
+    <!-- Если субд mysql читаем 1 элемент кортежа -->
     <th>{{el[0]}}</th>
     {%endif%}
     {% endfor %}

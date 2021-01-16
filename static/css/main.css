@@ -1,54 +1,93 @@
-header {
-    	 border: 4px solid black;
-       display: block;
-       height: 50px;
-    }
-header a {
-  color: black;
-   text-decoration: none;
+@import url('https://fonts.googleapis.com/css?family=Roboto|Suez+One');
+/*Стили для всего документа*/
+*{
+  margin: 0;
+  padding: 0;
 }
+
+body,html {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: Trebuchet MS, Helvetica;
+}
+/*Шапка*/
+header {
+  width: 100%;
+  height: 40px;
+  padding: 10px 0.5% 0px 0.5%;
+  float: left;
+  border-bottom: 1px solid silver;
+}
+
+#logo {
+  float: left;
+  width: 4%;
+  font-size: 1.7em;
+  color: #343434;
+  cursor: pointer;
+  font-family: 'Suez One', serif;
+  margin-left: 40px;
+}
+
+nav {
+  float: right;
+  width: 80%;
+  height: 70%;
+  line-height: 30px;
+  font-size: 1.1em;
+  text-align: center;
+}
+nav > a {
+  color: #343434;
+  text-decoration: none;
+}
+
+nav > a:not(:last-child) {
+  margin-right: 4%;
+}
+
+nav > a:hover {
+  color: #b0b0b0;
+  text-decoration: underline;
+}
+/*Главный блок*/
+#main {
+  float: left;
+  margin-top: 10px;
+}
+#main a {
+  color: #343434;
+  text-decoration: none;
+}
+#main a:hover{
+  color: #b0b0b0;
+  text-decoration: underline;
+}
+
+/*Стили для разных страниц и их элментов*/
+
 #time {
   position: absolute;
   width: auto;
   height: auto;
   right: 25px;
 }
-#links {
-  border: 4px solid black;
-  margin-top: 20px;
-  height: 500px;
-  width: 150px;
-  float: left;
-}
-#links div {
-  color: black;
-  text-decoration: none;
-  padding: 0;
-  height: 30px;
-  border-bottom: 4px solid black;
-}
-#links div a {
-  color: black;
-  text-decoration: none;
-}
-#graph {
- height: 300px;
- width: 300px;
-}
+
 #txt {
-  height: 495px;
-  width: 1095px;
+  height: 510px;
+  width: 1360px;
   resize: none;
+}
+
+#graph {
+  height: 300px;
+  width: 300px;
 }
 #sql {
   height: 200px;
   width: 1095px;
   resize: none;
-}
-#main {
-  border: 4px solid black;
-  float: right;
-  margin-top: 20px;
-  height: 500px;
-  width: 1100px;
 }

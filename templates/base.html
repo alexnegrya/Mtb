@@ -1,39 +1,30 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
+  	<meta charset="UTF-8">
     <title>{%block title%} {%endblock%}</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
-   <header>
-   	  <a href="/"><h3 align="center">{%block header%} {%endblock%}</h3></a>
-   </header>
-   <div id="links" align="center">
-    <div>
-      <a href="/">Главная</a>
-    </div>
-   	<div>
-      <a href="/settings">Настройки</a>
-    </div>
-   	<div>
-      <a href="/database?action=main">База данных</a>
-    </div>
-    <div>
-      <a href="/admin_panel?action=main">Админ панель</a>
-    </div>
-    <div>
-      <a href="/statistics">Статистика</a>
-    </div>
-    <div>
-      <a href="/information">Информация</a>
-    </div>
-   </div>
-   <div id="main">
+  <header>
+      <div id="logo" onclick="window.location.href = 'http://127.0.0.1:5000'">
+        Mtb
+      </div>
+      <nav>
+        <a href="/admin_panel?action=main" title="Администраторская панель" >Администраторская панель</a>
+        <a href="/settings"  title="Зайти в настройки">Настройки</a>
+        <a href="/database?action=main"  title="Зайти в базу данных">База данных</a>
+        <a href="/statistics"  title="Пасмотреть Статистику">Статистика</a>
+        <a href="/information"  title="Узнайте больше о сервере">Информация</a>
+    </nav>
+  </header>
+  <div id="main">
     <div id="time">{{ date }}</div>
-{%block main%}{%endblock%}
-   </div>
+    {%block main%}{%endblock%}
+  </div>
 </body>
 </html>

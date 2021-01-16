@@ -1,23 +1,26 @@
 #!/usr/bin/env python
 # Пытаемся импортировать нужные библеотеки
 try:
+    import functions
     import sys
-    from functions import get_date,write_log
     import sqlite3
-    import json
     import telebot
-    import requests
     import config
     import pyowm
     import wikipedia
+    import json
     import signal
+    import sqlite3
     import random
-    import bs4
+    from bs4 import BeautifulSoup as BS
+    # Импортируем класс datetime из модуля datetime
+    from datetime import datetime
+    from pyowm.utils.config import get_default_config
     from telebot import types
 except ModuleNotFoundError:
     error = sys.exc_info()
-    write_log(
-        "[Ошибка] Какой-то модуль не устоновлен!Перепроверьте список устоновленных модулей\nОшибка:"+str(error[1])+"\n",True
+    functions.write_log(
+        "[Ошибка] Какой-то модуль не устоновлен!Перепроверьте список устоновленных модулей\nОшибка:"+str(error[1]),True
     )
     exit(1)
 
@@ -26,7 +29,6 @@ signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
 # Инциализация бота
 bot = telebot.TeleBot(config.token)
 owm = pyowm.OWM(config.weather_token, config.config_dict)
-
 
 print(
     "Чтобы начать запуск бота напишите 'Запуск' или напишите 'Настройки' для входа в настройки бота"
@@ -70,8 +72,8 @@ if options == "Запуск":
             for row in rows:
                 bot.send_message(row[0], config.on_start_msg)
     # Выводим лог
-    write_log(
-        "[Консоль] Бот запущен и работает [" + get_date() + "]\n"
+    functions.write_log(
+        "[Консоль] Бот запущен и работает [" + str(datetime.now()) + "]\n",False
     )
     # Функция на команду старт
     @bot.message_handler(commands=["start"])
@@ -82,8 +84,8 @@ if options == "Запуск":
                 message.from_user.first_name + "_" + message.from_user.last_name
             )
         # Выводим лог
-        write_log(
-            "[Консоль] "+ message.from_user.username + " использовал команду start [" + get_date() + "]\n"
+        functions.write_log(
+            "[Консоль] "+ message.from_user.username + " использовал команду start [" + str(datetime.now()) + "]\n",False
         )
         # Создаём клавиатуру
         # Подгоняем по размерам
@@ -99,6 +101,8 @@ if options == "Запуск":
         bot.send_message(
             message.chat.id, "Привет странник!\nЧего изволишь?", reply_markup=markup
         )
+        date = datetime.now()
+        month = date.strftime("%m")
         if config.sqlite == True:
             # Подключаемся к базе данных sqlite
             con = sqlite3.connect("db.db")
@@ -117,7 +121,7 @@ if options == "Запуск":
             # Если пользователя нет то заносим его базу данных sqlite
             if user == 0:
                 cur.execute(
-                    "UPDATE subscriptions SET subscriptions = subscriptions+1 WHERE Month = '" + get_date() + "'"
+                    "UPDATE subscriptions SET subscriptions = subscriptions+1 WHERE Month = '" + month + "'"
                 )
                 con.commit()
                 cur.execute(
@@ -131,12 +135,12 @@ VALUES ("""
                     + """','"""
                     + message.from_user.last_name
                     + """','"""
-                    + get_date()
+                    + functions.get_date()
                     + """')"""
                 )
                 con.commit()
-                write_log(
-                    "[База данных] Добавлен новый пользователь в базу данных [" + get_date() + "]\n"
+                functions.write_log(
+                    "[База данных] Добавлен новый пользователь в базу данных [" + str(datetime.now()) + "]\n",False
                 )
                 con.close()
         else:
@@ -157,8 +161,8 @@ VALUES ("""
                     ),
                 )
                 config.con.commit()
-                write_log(
-                    "[База данных] Добавлен новый пользователь в базу данных ["+ get_date() + "]\n"
+                functions.write_log(
+                    "[База данных] Добавлен новый пользователь в базу данных ["+ str(datetime.now()) + "]\n",False
                 )
 
     @bot.message_handler(content_types=["text"])
@@ -171,25 +175,18 @@ VALUES ("""
         # Смотрим что отослал пользователь
         if message.text == "Новости":
             # Выводим лог
-            write_log(
-                "[Консоль] " + message.from_user.username + " использовал кнопку новости [" + get_date() + "]\n"
+            functions.write_log(
+                "[Консоль] " + message.from_user.username + " использовал кнопку новости [" + str(datetime.now()) + "]\n",False
             )
-            # Получем html главной страницы сайта point.md
-            html = requests.get("https://point.md").text
+            # Парсим сайт point.md
+            r_html = functions.get_html("https://point.md/")
             # Указываем что будем парсить и каким парсером
             # lxml-хороший быстрый парсер
             # html.parser - простой но позволяет работать со сломанными тэгами типо div></div
-            try:
-                parser = bs4.BeautifulSoup(html, "lxml")
-            except bs4.FeatureNotFound:
-                write_log(
-                    "[Предупреждение] Парсер lxml не найден!Будет использован html.parser [" + get_date() + "]\n"
-                    )
-                parser = bs4.BeautifulSoup(html, "html.parser")
-            #Создаём список куда будем класть все заголовки ссылки время статей
+            html = BS(r_html, "lxml")
             posts = []
             # В цикле собираем все заголовки время и ссылки в массив
-            for el in parser.select(".post-list-container-item"):
+            for el in html.select(".post-list-container-item"):
                 title = el.select(".post-list-container-item-text-title > a")
                 time = el.select(".post-list-time")
                 links = [a["href"] for a in el.find_all("a", href=True) if a.text]
@@ -202,19 +199,19 @@ VALUES ("""
                     message.chat.id,
                     post["title"]
                     + "\nВремя:" + post["time"]
-                    + "\nСсылка:https://point.md/"+post["href"]
+                    + "\nСсылка:https://point.md/"+post["href"],
                 )
         elif message.text == "Погода":
             # Выводим лог
-            write_log(
-                "[Консоль] " + message.from_user.username + " использовал кнопку Погода [" + get_date() + "]\n"
+            functions.write_log(
+                "[Консоль] " + message.from_user.username + " использовал кнопку Погода [" + str(datetime.now()) + "]\n",False
             )
             msg = bot.send_message(message.chat.id, "Введи название города")
             bot.register_next_step_handler(msg, weather)
         elif message.text == "Школа":
             # Выводим лог
-            write_log(
-                "[Консоль] "+ message.from_user.username + " использовал кнопку школа [" + get_date() + "]\n"
+            functions.write_log(
+                "[Консоль] "+ message.from_user.username + " использовал кнопку школа [" + str(datetime.now()) + "]\n",False
             )
             msg_school = bot.send_message(
                 message.chat.id,
@@ -223,16 +220,14 @@ VALUES ("""
             bot.register_next_step_handler(msg_school, school)
         elif message.text == "Цитата":
             # Выводим лог
-            write_log(
-                "[Консоль] "+ message.from_user.username+ " использовал кнопку цитата ["+ get_date() + "]\n"
+            functions.write_log(
+                "[Консоль] "+ message.from_user.username+ " использовал кнопку цитата ["+ str(datetime.now())+ "]\n",False
             )
-            #Загружаем json
-            with open("etc/quotes.json", encoding="utf-8") as f:
-                quote = json.load(f)
-            random_json = random.randint(0, 10266)
+            quote = functions.file("", "quotes.json", "json", "r")
+            rand_int = random.randint(0, 10266)
             msg = (
-                "Цитата:" + quote[random_json]["quote"]
-                +"\nАвтор:"+ quote[random_json]["source"]
+                "Цитата:" + quote[rand_int]["quote"]
+                +"\nАвтор:"+ quote[rand_int]["source"]
             )
             # Отсылаем цитату
             bot.send_message(message.chat.id, msg)
@@ -244,8 +239,8 @@ VALUES ("""
 1)Отослать сообщение во все чаты
 2)Отослать сообщение определенному человеку""",
             )
-            write_log(
-                "[Админ панель] " + message.from_user.username + " зашёл в администраторскую  панель [" + get_date() + "]\n"
+            functions.write_log(
+                "[Админ панель] " + message.from_user.username + " зашёл в администраторскую  панель [" + str(datetime.now()) + "]\n",False
             )
             bot.register_next_step_handler(msg, admin)
         else:
@@ -306,8 +301,8 @@ VALUES ("""
         msg = message.text
         bot.send_message(chat_id[0], msg)
         bot.send_message(message.chat.id, "Сообщение отправленно")
-        write_log(
-            "[Админ] "+ message.from_user.username + " отравил сообщение " + msg + " пользователю " + who+ " ["+ get_date() + "]\n"
+        functions.write_log(
+            "[Админ] "+ message.from_user.username + " отравил сообщение " + msg + " пользователю " + who+ " ["+ str(datetime.now()) + "]\n",False
         )
 
     # ------------
@@ -374,8 +369,8 @@ VALUES ("""
                 + "\nСкорость ветра:"+ str(wind["speed"])+ " м/с",
             )
         except pyowm.commons.exceptions.UnauthorizedError:
-            write_log(
-                "[Предупреждение] Запрос не был выполнен так как неправильный api ключ ["+ get_date() + "]\n"
+            functions.write_log(
+                "[Ошибка] Запрос не был выполнен так как неправильный api ключ ["+ str(datetime.now()) + "]\n",False
                 )
             bot.send_message(message.chat.id, "Произошла внутрения ошибка")
         except:
