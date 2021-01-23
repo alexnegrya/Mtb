@@ -1,27 +1,63 @@
 try:
-    import functions
+    from lib import write_log, get_all_versions, check_admin, Date, get_collection, generate_string
     import sys
     import config
-    import traceback
-    import sqlite3
-    import matplotlib.pyplot as plt
-    import numpy as np
     import telebot
-    from flask import Flask, render_template, request
-    from importlib import reload
+    from flask import Flask, render_template, request, flash, make_response, redirect
+    import hashlib
+    from uuid import uuid4
+    from pymongo import MongoClient
+    from pymongo.errors import OperationFailure
 except ModuleNotFoundError:
     error = sys.exc_info()
-    functions.write_log(
-        "[Ошибка] Какой-то модуль не устоновлен!Перепроверьте список устоновленных модулей\nОшибка:"+str(error[1])+"\n",True
+    write_log(
+        """[Ошибка] Какой-то модуль не устоновлен!Перепроверьте список устоновленных модулей
+Ошибка:""" + str(error[1]) + "\n", True
     )
     exit(1)
 
 app = Flask(__name__)
 bot = telebot.TeleBot(config.token)
-app
+Date = Date()
 
-@app.route("/", methods=["POST", "GET"])
+
+@app.route("/login", methods=["POST", "GET"])
+def login():
+    if request.method == "GET":
+        return render_template("login.html", admin=check_admin(request.cookies.get('token')))
+    else:
+        admin_login = request.form.get("login")
+        admin_password = request.form.get("password")
+        hash_password = hashlib.md5(admin_password.encode())
+        admin = config.admins.find_one({"login": admin_login})
+        if admin_login == admin["login"] and hash_password.hexdigest() == admin["password"]:
+            hash_admin = uuid4()
+            config.admins.update_one({"login": admin_login}, {"$set": {"auth_token": str(hash_admin)}})
+            resp = make_response(
+                redirect("http://127.0.0.1:5000/admin_panel?action=main")
+            )
+            resp.set_cookie('token', str(hash_admin), max_age=31536000, samesite='Lax')
+            return resp
+        else:
+            return render_template('login.html',
+                                   msg="Неправильный логин или пароль",
+                                   admin=check_admin(request.cookies.get('token'))
+                                   )
+
+
+@app.route("/")
 def index():
+    versions = get_all_versions()
+    # Иначе рендерим страничку html
+    return render_template("index.html",
+                           log_reading_frequency=config.log_reading_frequency,
+                           admin=check_admin(request.cookies.get('token')),
+                           versions=versions,
+                           )
+
+
+@app.route("/log", methods=["POST", "GET"])
+def log():
     # Если метод запроса POST отдаём логи
     if request.method == "POST":
         # Открываем логи и держим их открытыми
@@ -30,32 +66,10 @@ def index():
         return text
     else:
         # Иначе рендерим страничку html
-        return render_template("index.html", date=functions.get_date(), con=config)
-
-
-@app.route("/statistics")
-def statistics():
-    # Создаём график
-    fig = plt.figure()
-    # Добавляем оси
-    ax = fig.add_subplot(111)
-    if config.sqlite == True:
-        # Подключаем sqlite
-        con = sqlite3.connect("db.db")
-        cur = con.cursor()
-        cur.execute("SELECT * FROM subscriptions")
-        row = cur.fetchall()
-    else:
-        config.cur.execute("SELECT * FROM subscriptions")
-        row = config.cur.fetchall()
-    subscriptions = []
-    for el in row:
-        subscriptions.append(el[1])
-    ax.set_xlabel("Месяца")
-    ax.set_ylabel("Подписчики")
-    ax.plot([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], subscriptions)
-    fig.savefig("static/plot.png")
-    return render_template("statistics.html", date=functions.get_date())
+        return render_template("log.html",
+                               log_reading_frequency=config.log_reading_frequency,
+                               admin=check_admin(request.cookies.get('token'))
+                               )
 
 
 @app.route("/database", methods=["GET", "POST"])
@@ -63,81 +77,41 @@ def db():
     action = request.args.get("action")
     if request.method == "GET":
         if action == "main":
-            if config.sqlite == True:
-                con = sqlite3.connect("db.db")
-                cur = con.cursor()
-                cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
-                row = cur.fetchall()
-                db_system = "sqlite"
-                db = "Main"
-            else:
-                config.cur.execute(
-                    "SELECT table_name FROM information_schema.tables where table_schema='"
-                    + config.mysql_db
-                    + "'"
-                )
-                row = config.cur.fetchall()
-                db_system = "mysql"
-                db = config.mysql_db
+            data = config.db.list_collection_names()
             return render_template(
                 "database.html",
-                date=functions.get_date(),
-                data=row,
-                action=action,
-                db_system=db_system,
-                db=db,
-            )
-        elif action == "sql_query":
-            return render_template("database.html", action=action)
-        else:
-            if config.sqlite == True:
-                con = sqlite3.connect("db.db")
-                cur = con.cursor()
-                # Получаем данные с таблице(sqlite)
-                cur.execute("SELECT * FROM " + action)
-                data = cur.fetchall()
-                # Получаем имена столбцов
-                cur.execute("PRAGMA table_info(" + action + ")")
-                column_names = cur.fetchall()
-                db_system = "sqlite"
-            else:
-                # Получаем данные с таблице(mysql)
-                config.cur.execute("SELECT * FROM " + action)
-                data = config.cur.fetchall()
-                # Получаем имена столбцов
-                config.cur.execute(
-                    "select column_name from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='" + action + "'"
-                )
-                column_names = config.cur.fetchall()
-                db_system = "mysql"
-            return render_template(
-                "database.html",
-                date=functions.get_date(),
                 data=data,
                 action=action,
-                column_names=column_names,
-                db_system=db_system,
+                admin=check_admin(request.cookies.get('token'))
+            )
+        elif action == "sql_query":
+            return render_template("database.html",
+                                   action=action,
+                                   admin=check_admin(request.cookies.get('token'))
+                                   )
+        else:
+            collection = get_collection(action)
+            return render_template(
+                "database.html",
+                action=action,
+                collection=collection,
+                admin=check_admin(request.cookies.get('token'))
             )
     else:
-        # Смотрим что дали
-        sql = request.form.get("sql")
-        if config.sqlite == True:
-            # Выполняем запрос на sqlite
-            con = sqlite3.connect("db.db")
-            cur = con.cursor()
-            cur.execute(sql)
-            # Потверждаем изменения
-            con.commit()
-        else:
-            # Выполняем запрос на mysql
-            config.cur.execute(sql)
-            # Потверждаем изменения
-            config.con.commit()
+        try:
+            db.command(request.form.get("query"))
+        except OperationFailure:
+            return render_template(
+                "database.html",
+                msg="Ошибка",
+                action="sql_query",
+                admin=check_admin(request.cookies.get('token'))
+            )
         return render_template(
             "database.html",
-            date=functions.get_date(),
-            data="Success",
+            msg="Успех",
             action="sql_query",
+            admin=check_admin(request.cookies.get('token'))
         )
 
 
@@ -147,186 +121,176 @@ def admin_panel():
     if request.method == "GET":
         if action == "main":
             return render_template(
-                "admin_panel.html", date=functions.get_date(), action=action
+                "admin_panel.html",
+                action="main",
+                admin=check_admin(request.cookies.get('token'))
             )
+        elif action == "logout":
+            res = make_response(
+                render_template("login.html",
+                                admin=check_admin(request.cookies.get('token'))
+                                )
+            )
+            res.set_cookie('token', max_age=0)
+            return res
         else:
             return render_template(
-                "admin_panel.html", date=functions.get_date(), action=action
+                "admin_panel.html",
+                action=action,
+                admin=check_admin(request.cookies.get('token'))
             )
     else:
         msg_to_all = request.form.get("msg_to_all")
-        nicname = request.form.get("nicname")
+        nickname = request.form.get("nickname")
         msg = request.form.get("msg")
         type_form = request.form.get("type_form")
         if type_form == "send_message_to_all":
             if msg_to_all == "":
                 return render_template(
                     "admin_panel.html",
-                    date=functions.get_date(),
-                    action="main",
-                    data="Заполните форму",
+                    action="send_message_to_all",
+                    msg="Заполните форму",
+                    admin=check_admin(request.cookies.get('token'))
                 )
             else:
-                if config.sqlite == True:
-                    con = sqlite3.connect("db.db")
-                    cur = con.cursor()
-                    cur.execute("SELECT Chat_id FROM users")
-                    rows = cur.fetchall()
-                    for row in rows:
-                        bot.send_message(row[0], msg_to_all)
-                    con.close()
-                else:
-                    config.cur.execute("SELECT Chat_Id FROM `user_subscriptions`")
-                    rows = config.cur.fetchall()
-                    for row in rows:
-                        bot.send_message(row[0], msg_to_all)
+                for element in config.users.find():
+                    bot.send_message(element['chat_id'], msg_to_all)
                 return render_template(
                     "admin_panel.html",
-                    date=functions.get_date(),
-                    action="main",
-                    data="Успех",
+                    action="send_message_to_all",
+                    msg="Успех",
+                    admin=check_admin(request.cookies.get('token'))
                 )
         else:
-            if nicname == "" and msg == "" or nicname == "" or msg == "":
-                return render_template(
-                    "admin_panel.html",
-                    date=functions.get_date(),
-                    action="main",
-                    data="Заполните форму",
-                )
-            else:
-                if config.sqlite == True:
-                    con = sqlite3.connect("db.db")
-                    cur = con.cursor()
-                    cur.execute(
-                        "SELECT Chat_id FROM users WHERE Username = '" + nicname + "'"
+            if nickname != "" and msg != "":
+                user = config.users.find_one({"username": nickname})
+                if user is None:
+                    return render_template(
+                        "admin_panel.html",
+                        action="send_message_to_user",
+                        msg="Пользователь не найден",
+                        admin=check_admin(request.cookies.get('token'))
                     )
-                    row = cur.fetchall()
-                    len_row = len(row)
-                    if len_row == 0:
-                        return render_template(
-                            "admin_panel.html",
-                            date=functions.get_date(),
-                            action="main",
-                            data="Пользователь не найден",
-                        )
-                    else:
-                        bot.send_message(row[0][0], msg)
-                        con.close()
                 else:
-                    config.cur.execute(
-                        "SELECT Chat_Id FROM `user_subscriptions` WHERE Username = '" + nicname + "'"
+                    bot.send_message(user['chat_id'], msg)
+                    return render_template(
+                        "admin_panel.html",
+                        action="send_message_to_user",
+                        msg="Успех",
+                        admin=check_admin(request.cookies.get('token'))
                     )
-                    row = config.cur.fetchall()
-                    bot.send_message(row[0][0], msg)
+            else:
                 return render_template(
                     "admin_panel.html",
-                    date=functions.get_date(),
-                    action="main",
-                    data="Успех",
+                    action="send_message_to_user",
+                    msg="Заполните форму",
+                    admin=check_admin(request.cookies.get('token'))
                 )
 
 
 @app.route("/settings", methods=["GET", "POST"])
 def settings():
-    settings = {
-	'token' : config.token,
-	'weather_token' : config.weather_token,
-	'on_start_msg' : config.on_start_msg,
-	'global_iteration_news' : config.global_iteration_news,
-	'admin_password' : config.admin_password,
-	'log_reading_frequency' : config.log_reading_frequency,
-	'sqlite' : config.sqlite,
-	'mysql_user' : config.mysql_user,
-	'mysql_password' : config.mysql_password,
-	'mysql_db' : config.mysql_db,
-	}
+    config_elements = {
+        'token': config.token,
+        'weather_token': config.weather_token,
+        'on_start_msg': config.on_start_msg,
+        'global_iteration_news': config.global_iteration_news,
+        'admin_password': config.admin_password,
+        'log_reading_frequency': config.log_reading_frequency,
+    }
     # Если есть запрос типа POST
     if request.method == "POST":
         # Читаем данные из формы
-        settings['token']=telegram_token = request.form.get("telegram_token")
-        settings['weather_token']=owm_token = request.form.get("owm_token")
-        settings['on_start_msg']=start_msg = request.form.get("start_msg")
-        settings['global_iteration_news']=global_iteration_news = request.form.get("iteration_news")
-        settings['admin_password']=admin_panel_password = request.form.get("admin_panel_password")
-        settings['sqlite']=sqlite = request.form.get("Sqlite")
-        settings['log_reading_frequency']=log_reading_frequency = request.form.get("log_reading_frequency")
-        settings['mysql_user']=mysql_user = request.form.get("mysql_user")
-        settings['mysql_password']=mysql_password = request.form.get("mysql_password")
-        settings['mysql_db']=mysql_db = request.form.get("mysql_db")
-        # Если данные mysql не указаны то присваеваем значения им из конфига
-        if mysql_user == None and mysql_password == None and mysql_db == None:
-            mysql_user = config.mysql_user
-            mysql_password = config.mysql_password
-            mysql_db = config.mysql_db
+        config_elements['token'] = telegram_token = request.form.get("telegram_token")
+        config_elements['weather_token'] = owm_token = request.form.get("owm_token")
+        config_elements['on_start_msg'] = start_msg = request.form.get("start_msg")
+        config_elements['global_iteration_news'] = global_iteration_news = request.form.get("iteration_news")
+        config_elements['admin_password'] = admin_panel_password = request.form.get("admin_panel_password")
+        config_elements['log_reading_frequency'] = log_reading_frequency = request.form.get("log_reading_frequency")
         # Создаём новый конфиг
         new_config = (
-            """import functions
-from datetime import datetime
-#Из модуля pyowm utils получаем функцию для получения стандартного конфига
+                """from pymongo import MongoClient
+from lib import write_log, Date
+# Из модуля pyowm utils получаем функцию для получения стандартного конфига
 from pyowm.utils.config import get_default_config
-#Токен взятый с @BotFather
-token = '"""+ telegram_token + """'
-#Токен взятый с сайта openweathermap.org
+
+# Соединяемся с базой данных
+client = MongoClient('localhost', 27017)
+db = client.Telegram
+users = db.users
+admins = db.admins
+# Токен взятый с @BotFather
+token = '""" + telegram_token + """'
+# Токен взятый с сайта openweathermap.org
 weather_token = '""" + owm_token + """'
-#Получаем стандартный конфиг для pyowm
+# Получаем стандартный конфиг для pyowm
 config_dict = get_default_config()
-#Устонавливаем русский язык в этом конфиге
+# Устонавливаем русский язык в этом конфиге
 config_dict['language'] = 'ru'
-#Сообщение при старте
+# Сообщение при старте
 on_start_msg = '""" + start_msg + """'
-#Сколько показывать новостей
-global_iteration_news = """  + global_iteration_news  + """
-#Секретный ключ для входа в админ панель
+# Сколько показывать новостей
+global_iteration_news = """ + global_iteration_news + """
+# Секретный ключ для входа в админ панель
 admin_password = '""" + admin_panel_password + """'
-#Частота чтения логов
+# Частота чтения логов
 log_reading_frequency = """ + log_reading_frequency + """
-#База данных sqlite
-sqlite=""" + sqlite  + """
-#Пользователь к базе данных mysql
-mysql_user = '""" + mysql_user + """'
-#Пароль к пользователю mysql
-mysql_password = '""" + mysql_password + """'
-#База данных mysql
-mysql_db = '""" + mysql_db + """'
-if sqlite==False:
-	import pymysql
-	#Подключаемся к базе данных
-	try:
-		con = pymysql.connect('localhost', mysql_user, mysql_password, mysql_db)
-	except pymysql.err.OperationalError:
-		functions.write_log(
-            '[Ошибка] Невозможно подключиться к базе данных!Проверьте правильность данных для подключенния ['+functions.get_date()+']',False
-        )
-		exit(1)
-	#Создаём курсор.Курсор нужен для выполнений операций с базой данных
-	cur = con.cursor()
-		"""
+"""
         )
         # Пишем в файл
         with open("config.py", "w", encoding="utf-8") as f:
             f.write(new_config)
         return render_template(
-            "settings.html", con=settings, date=functions.get_date(), msg="Успех"
+            "settings.html",
+            con=config_elements,
+            msg="Успех",
+            admin=check_admin(request.cookies.get('token'))
         )
 
     else:
-        return render_template("settings.html", con=settings, date=functions.get_date())
+        return render_template("settings.html",
+                               con=config_elements,
+                               admin=check_admin(request.cookies.get('token'))
+                               )
 
 
 @app.route("/information")
 def information():
     # Получаем версию python
     version_python = str(sys.version_info.major) + "." + str(sys.version_info.minor)
-    if config.sqlite == True:
-        db = "sqlite"
-    else:
-        db = "mysql"
+    versions = get_all_versions()
     return render_template(
         "information.html",
-        date=functions.get_date(),
         version_python=version_python,
-        db=db,
+        version_bot=versions[-1]['version'],
+        date_update=versions[-1]['date_update'],
+        description_update=versions[-1]['description_update'],
+        admin=check_admin(request.cookies.get('token'))
     )
+
+
+@app.route("/chat", methods=["GET", "POST"])
+def chat():
+    admin = check_admin(request.cookies.get('token'))
+    messages = config.chat.find()
+    if request.method == "GET":
+        return render_template("chat.html",
+                               admin=admin,
+                               messages=messages
+                               )
+    else:
+        message = request.form.get("form_message")
+        config.chat.insert_one({
+            "_id": generate_string(10),
+            "login": admin[1]['login'],
+            "message": message,
+            "date": Date.get_date()
+        })
+        return render_template("chat.html",
+                               admin=admin,
+                               messages=messages
+                               )
+
+
 if __name__ == '__main__':
-    app.run(debug = False)
+    app.run(debug=True)

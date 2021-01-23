@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+    {%block title%}
+        Чат
+    {%endblock%}
+{%block main%}
+    {%if admin[0]%}
+        <div id="chat">
+            {%for message in messages%}
+                [{{message['login']}}] {{message['message']}} [{{message['date']}}]<br>
+            {%endfor%}
+        </div><br>
+        <form action="/chat" method="post">
+            <b>Написать сообщение:</b><br>
+            <label>Сообщение:<input name="form_message"></label><br>
+            <input type="submit" value="Отправить сообщение">
+        </form>
+    {%endif%}
+{%endblock%}

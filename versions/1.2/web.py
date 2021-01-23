@@ -29,7 +29,7 @@ def index():
         return text
     else:
         # Иначе рендерим страничку html
-        return render_template("index.html", date=functions.get_date(), con=config)
+        return render_template("log.html", date=functions.get_date(), con=config)
 
 
 @app.route("/statistics")

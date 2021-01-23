@@ -3,9 +3,13 @@
 Информация
 {%endblock%}
 {%block main%}
-Разработчик:Roald_iopi<br>
-Версия python:{{version_python}}<br>
-Веб сервер:Flask<br>
-Используеться база данных:{{db}}<br>
-Версия бота:1.2.5<br>
+    {%if admin[0]%}
+        Разработчик:Roald_iopi<br>
+        Версия python:{{version_python}}<br>
+        Веб сервер:Flask<br>
+        Используеться база данных:MongoDb<br>
+        Версия бота:{{version_bot}}<br>
+        Дата обновления:{{date_update}}<br>
+        Описание обновления:<div id="pre">{{description_update}}</div>
+    {%endif%}
 {%endblock%}

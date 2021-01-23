@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{%block title%}
+Логи
+{% endblock %}
+{%block main%}
+    {%if admin[0]%}
+        {%if admin[1]['level'] == 0%}
+            <textarea id="txt" readonly ></textarea>
+            <script type="text/javascript">
+            function sendRequest() {
+              $.ajax({
+              url: '/log',
+              method: 'post',
+              dataType: 'text',
+              success: function(data){
+                $("#txt").text(data);
+              }
+            });
+            }
+            //Один раз запрашиваем логи чтобы просто не было пустого экрана
+            sendRequest()
+            //Ставим таймер чтобы мы запрашивали логи с опредёлнной частотой
+            setInterval(sendRequest,{{ log_reading_frequency }});
+            </script>
+        {%endif%}
+    {%endif%}
+{%endblock%}

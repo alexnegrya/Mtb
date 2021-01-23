@@ -1,22 +1,33 @@
 import os
-os.system("pip3 install requests -q")
-import requests
 import zipfile
-import sqlite3
-import glob
 import signal
 import sys
+import random
+import string
+import hashlib
+from platform import system
+from subprocess import Popen, PIPE
+print("Устонавливаем requests")
+os.system("pip install requests -q")
+import requests
+print("Устонавливаем pymongo")
+os.system("pip install pymongo==3.11.2 -q")
+from pymongo import MongoClient
 
 # Убираем вывод о прерывание
 signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
-
-system = os.uname().sysname
+system = system()
 
 if system == "Linux" or system == "Windows":
     print(
         "Приветсвуем вас в полуавтоматическом устоновщике Кумэтру бота версии 1.0\nНажмите ENTER для начала устоновке"
     )
     input()
+    # Спрашиваем у пользователя нужные данные
+    bot_token = input("Напишите токен взятый у @BotFather:")
+    weather_token = input("Напишите токен взятый у openweathermap.org:")
+    admin_login = input("Укажите логин для админки:")
+    admin_password = input("Укажите пароль для админки:")
     requirements = [
         "PyMySQL",
         "pyowm",
@@ -25,202 +36,129 @@ if system == "Linux" or system == "Windows":
         "pyTelegramBotAPI",
         "flask",
         "numpy",
-        "matplotlib"
+        "matplotlib",
+        "cryptography"
     ]
-    # Спрашиваем у пользователя нужные данные
-    bot_token = input("Напишите токен взятый у @BotFather:")
-    weather_token = input("Напишите токен взятый у openweathermap.org:")
-    secret_key = input("Укажите пароль для админки:")
-    while True:
-        db = input("Какую базу данных вы хотите использовать mysql или sqlite?:")
-        if db == "sqlite" or db == "mysql":
-            break
-        else:
-            print("Введите то что указано в списке")
-    #Проверка скачен ли архив с файлами
+    linux_commands = [
+        "wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -",
+        "echo \"deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse\""
+        " | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list",
+        "sudo apt-get update",
+        "sudo apt-get install -y mongodb-org",
+        "sudo systemctl daemon-reload",
+        "sudo systemctl start mongod",
+        "sudo systemctl enable mongod"
+    ]
+    windows_commands = [
+        "msiexec -i mongo.msi"
+        "cd C:\\",
+        "md \"\data\db\"",
+    ]
+    collections = [
+        "admins",
+        "users",
+        "chat"
+    ]
+    # Проверка скачен ли архив с файлами
     directory = os.listdir(path=".")
     if 'main.py' in directory:
-    	downloaded = True
+        downloaded = True
     else:
-    	downloaded = False
-    if downloaded == False:
-    	print("Скачиваем архив")
-    	url = "https://github.com/roaldiopi/Mtb/archive/main.zip"
-    	r = requests.get(url)
-    	with open("main.zip", "wb") as f:
-    		f.write(r.content)
-    	#Разархивируем файлы
-    	print("Разархивируем файлы")
-    	zip = zipfile.ZipFile("main.zip")
-    	zip.extractall()
-    	zip.close()
-    	#Удаляем zip архива
-    	print("Удаляем zip файл")
-    	os.remove("main.zip")
-    if db == "sqlite":
-        sqlite = True
-        # Указываем данные по умолчанию
-        mysql_user = "user"
-        mysql_password = "password"
-        mysql_db = "db"
-    else:
-        sqlite = False
-        mysql_user = input("Напишите имя пользователя для базы данных mysql:")
-        mysql_password = input("Укажите пароль для базы данных mysql:")
-        mysql_db = input("Укажите базу данных mysql:")
-
+        downloaded = False
+    if downloaded is False:
+        print("Скачиваем архив")
+        url = "https://github.com/roaldiopi/Mtb/archive/main.zip"
+        r = requests.get(url)
+        with open("main.zip", "wb") as f:
+            f.write(r.content)
+        # Разархивируем файлы
+        print("Разархивируем файлы")
+        zip_archive = zipfile.ZipFile("main.zip")
+        zip_archive.extractall()
+        zip_archive.close()
+        # Удаляем zip
+        print("Удаляем zip файл")
+        os.remove("main.zip")
     config = (
-        """from datetime import datetime
-#Из модуля pyowm utils получаем функцию для получения стандартного конфига
+            """from pymongo import MongoClient
+# Из модуля pyowm utils получаем функцию для получения стандартного конфига
 from pyowm.utils.config import get_default_config
-#Токен взятый с @BotFather
-token = '"""+ bot_token + """'
-#Токен взятый с сайта openweathermap.org
-weather_token = '"""+ weather_token + """'
-#Получаем стандартный конфиг для pyowm
+
+# Соединяемся с базой данных
+client = MongoClient('localhost', 27017)
+db = client.Telegram
+users = db.users
+admins = db.admins
+chat = db.chat
+# Токен взятый с @BotFather
+token = '"""+bot_token+"""'
+# Токен взятый с сайта openweathermap.org
+weather_token = '"""+weather_token+"""'
+# Получаем стандартный конфиг для pyowm
 config_dict = get_default_config()
-#Устонавливаем русский язык в этом конфиге
+# Устонавливаем русский язык в этом конфиге
 config_dict['language'] = 'ru'
-#Сообщение при старте
+# Сообщение при старте
 on_start_msg = 'Бот запустился'
-#Сколько показывать новостей
+# Сколько показывать новостей
 global_iteration_news = 10
-#Секретный ключ для входа в админ панель
-admin_password = '"""+ secret_key + """'
-#Частота чтения логов
-log_reading_frequency = 30000
-#База данных sqlite
-sqlite="""+ str(sqlite) +"""
-#Пользователь к базе данных mysql
-mysql_user = '"""+ mysql_user + """'
-#Пароль к пользователю mysql
-#Если пароль password значит пароль не был устоновлен
-mysql_password = '"""+ mysql_password + """'
-#База данных mysql
-mysql_db = '"""+ mysql_db + """'
-#Игнорируем ли ошибки
-ignore_errors = False
-if sqlite==False:
-	import pymysql
-	#Подключаемся к базе данных
-	try:
-		con = pymysql.connect('localhost', mysql_user, mysql_password, mysql_db)
-	except pymysql.err.OperationalError:
-		functions.write_log(
-            '[Ошибка] Невозможно подключиться к базе данных!Проверьте правильность данных для подключенния ['+functions.get_date()+']',False
-        )
-		exit(1)
-	#Создаём курсор.Курсор нужен для выполнений опереаций с базой данных
-	cur = con.cursor()"""
+# Секретный ключ для входа в админ панель
+admin_password = '"""+admin_password+"""'
+# Частота чтения логов
+log_reading_frequency = 30000"""
     )
     print("Записаваем ввёденные данные в конфиг")
-    if downloaded == True:
-    	with open("config.py", "w", encoding="utf-8") as f:
-       		f.write(config)
+    if downloaded is True:
+        with open("config.py", "w", encoding="utf-8") as f:
+            f.write(config)
+        print("config записан")
     else:
-    	with open("Mtb-main/config.py", "w", encoding="utf-8") as f:
-       		f.write(config)
+        with open("Mtb-main/config.py", "w", encoding="utf-8") as f:
+            f.write(config)
     print("Устонавливаем необходимые зависимости")
     for module in requirements:
-        os.system("pip3 install "+module+" -q")
+        os.system("pip3 install " + module + " -q")
+    letters_and_digits = string.ascii_letters + string.digits
+    identifier = ''.join(random.sample(letters_and_digits, 10))
+    hash_password = hashlib.md5(admin_password.encode())
     if system == "Linux":
-        if db == "mysql":
-            os.system("apt install mysql")
-            print(
-                """Итак мы почти закончили осталось два шага
-1)Зайти в mysql shell(что устоновщик сделает)
-2)Выполнить команды(что вам придеться сделать):
-CREATE USER '"""+ mysql_password + """'@'localhost' IDENTIFIED BY '"+db_key+"';
-GRANT ALL PRIVILEGES ON * . * TO '"""+ mysql_user+ """'@'localhost';
-CREATE DATABASE """+ mysql_db + """;
-USE """+ mysql_db + """;
-CREATE TABLE user_subscriptions (Chat_Id INT,Username TEXT,first_name TEXT,last_name TEXT,Registration_date TEXT);
-CREATE TABLE subscriptions(Month TEXT,Subscriptions INTEGER)
-12 раз повторить команду:
-INSERT INTO subscriptions(Month,Subscriptions) VALUES ('Изменяем число на +1 пока не будет 12',0);
-Нажмите ENTER чтобы продолжить
-"""
-            )
-            input()
-            os.system("sudo mysql")
-        else:
-        	if downloaded == True:
-        		conn = sqlite3.connect("db.db")
-        	else:
-        		conn = sqlite3.connect("Mtb-main/db.db")
-        	c = conn.cursor()
-            # Создаём таблицу с пользователями
-        	c.execute(
-            	"CREATE TABLE users(Chat_Id INTEGER,Username TEXT,first_name TEXT,last_name TEXT,Registration_date TEXT)"
-            	)
-            # Создаём таблицу с подписками
-        	c.execute(
-        		"CREATE TABLE subscriptions(Month TEXT,Subscriptions INTEGER)"
-        		)
-            # Наполняем таблицу с подписками нужными данными
-        	for x in range(1, 10):
-        		c.execute(
-        			"INSERT INTO subscriptions(Month,Subscriptions) VALUES ('0"+str(x)+ "',0)"
-        			)
-        	conn.commit()
-        	for x in range(10, 13):
-        		c.execute(
-        			"INSERT INTO subscriptions(Month,Subscriptions) VALUES ('"+str(x)+ "',0)"
-        			)
-        	conn.commit()
-            # -------------
-        	print("Устоновка завершена")
-        	exit()
+        for command in linux_commands:
+            os.system(command)
+        # Соединяемся с базой данных
+        client = MongoClient('localhost', 27017)
+        db = client.Telegram
+        for collection in collections:
+            db.create_collection(collection)
+        admins = db.admins
+        admins.insert_one({
+            "_id": identifier,
+            "login": admin_login,
+            "password": hash_password.hexdigest(),
+            "level": 0
+        })
+        print("Устоновка завершена")
     else:
-        if db == "mysql":
-            print("Скачиваем mysql")
-            url = "https://dev.mysql.com/get/Downloads/MySQLInstaller/mysql-installer-community-8.0.22.0.msi"
-            r = requests.get(url)
-            with open("mysql.msi", "wb") as code:
-                code.write(r.content)
-            print(
-                """Итак мы почти закончили осталось два шага
-1)Зайти в mysql shell(что устоновщик сделает)
-2)Выполнить команды(что вам придеться сделать):
-CREATE USER '"""+ mysql_password + """'@'localhost' IDENTIFIED BY '"+db_key+"';
-GRANT ALL PRIVILEGES ON * . * TO '"""+ mysql_user + """'@'localhost';
-CREATE DATABASE """+ mysql_db + """;
-USE """+ mysql_db + """;
-CREATE TABLE user_subscriptions (Chat_Id INT,Username TEXT,first_name TEXT,last_name TEXT,Registration_date TEXT);
-CREATE TABLE subscriptions(Month TEXT,Subscriptions INTEGER)
-12 раз повторить команду:
-INSERT INTO subscriptions(Month,Subscriptions) VALUES ('Изменяем число на +1 пока не будет 12',0);
-Нажмите ENTER чтобы продолжить
-"""
-            )
-            input()
-            exit()
-        else:
-            if downloaded == True:
-                conn = sqlite3.connect("Mtb-main/db.db")
-            else:
-        	    conn = sqlite3.connect("db.db")
-            c = conn.cursor()
-            c.execute(
-                "CREATE TABLE users(Chat_Id INTEGER,Username TEXT,first_name TEXT,last_name TEXT,Registration_date TEXT)"
-            )
-            # Создаём таблицу с подписками
-            c.execute(
-                "CREATE TABLE subscriptions(Month TEXT,Subscriptions INTEGER)"
-                )
-            # Наполняем таблицу с подписками нужными данными
-            for x in range(1, 10):
-                c.execute(
-                    "INSERT INTO subscriptions(Month,Subscriptions) VALUES ('0"+str(x)+"',0)"
-                )
-            conn.commit()
-            for x in range(10, 13):
-                c.execute(
-                    "INSERT INTO subscriptions(Month,Subscriptions) VALUES ('"+str(x)+ "',0)"
-                )
-            conn.commit()
-            # -------------
-            print("Устоновка завершена")
-            exit()
+        r = requests.get("https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-4.4.3-signed.msi")
+        with open("mongo.msi", "wb") as content:
+            content.write(r.content)
+        for command in windows_commands:
+            os.system(command)
+        Popen(["\"C:\Program Files\MongoDB\Server\4.4\bin\mongod.exe\"", "--dbpath=\"c:\data\db\""],
+              stdout=PIPE)
+        # Соединяемся с базой данных
+        client = MongoClient('localhost', 27017)
+        db = client.Telegram
+        for collection in collections:
+            db.create_collection(collection)
+        admins = db.admins
+        admins.insert_one({
+            "_id": identifier,
+            "login": admin_login,
+            "password": hash_password.hexdigest(),
+            "level": 0
+        })
+
+        print("Устоновка завершена")
+
 else:
     print("Ваша система не подерживаеться")

@@ -1,23 +1,13 @@
 {% extends 'base.html' %}
 {%block title%}
 Панель управления
-{%endblock%}
+{% endblock %}
 {%block main%}
-<textarea id="txt" readonly ></textarea>
-<script type="text/javascript">
-function sendRequest() {
-  $.ajax({
-  url: '/',
-  method: 'post',
-  dataType: 'text',
-  success: function(data){
-    $("#txt").text(data);
-  }
-});
-}
-//Один раз запрашиваем логи чтобы просто не было пустого экрана
-sendRequest()
-//Ставим таймер чтобы мы запрашивали логи с опредёлнной частотой
-setInterval(sendRequest,{{ con.log_reading_frequency }});
-   </script>
+    <h3>Обновления бота:</h3>
+    {%for el in versions%}
+        Версия:{{el['version']}}<br>
+        Дата обновления:{{el['date_update']}}<br>
+        Описание обновления:<div id="pre">{{el['description_update']}}</div><br>
+        ----------------------------------------------------------------<br>
+    {%endfor%}
 {%endblock%}

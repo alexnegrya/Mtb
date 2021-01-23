@@ -3,48 +3,43 @@
 База данных
 {%endblock%}
 {%block main%}
-<div id="tables">
-    {%if action == "main"%}
-    cистема управления база данных:{{db_system}}<br>
-    Таблицы в базе данных {{db}}:
-    <br>
-    {%for el in data%}
-    <a href="/database?action={{el[0]}}">{{el[0]}}</a><br>
-    {% endfor %}
-    <a href="/database?action=sql_query">Выполнить sql запрос</a>
-    {%  elif action == "sql_query"  %}
-    <form action="/database" method="POST">
-    Запрос:<br>
-    <textarea id="sql" name="sql"></textarea>
-    <br>
-    <input type="submit" value="Выполнить sql запрос">
-    </form>
-    {%if data%}
-    <p style="color:green">{{data}}</p>
-    {%endif%}
-    {%else%}
-   <table border="1">
-   <tr>
-    <!--Разбираем column_names и если cубд sqlite берём второй элемент при разборе  если иначе то берём первый -->
-    {%for el in column_names%}
-    {% if db_system == "sqlite" %}
-    <th>{{el[1]}}</th>
-    {%else%}
-    <th>{{el[0]}}</th>
-    {%endif%}
-    {% endfor %}
-   </tr>
-    {%for el in data%}
-   <tr>
-    <!-- Разбираем кортеж на части и вставляем данные по столбцам таблицы-->
-    {% for elm in el %}
-    <td>{{elm}}</td>
-     {% endfor %}
-</tr>
-    {% endfor %}
-</table>
-    <br>
-    <a href="/database?action=main">Вернуться к таблицам</a>
+    {%if admin[0]%}
+        {% if admin[1]['level'] == 0 %}
+            <div id="tables">
+                {%if action == "main"%}
+                    Таблицы в базе данных {{db}}:
+                    <br>
+                    {%for el in data%}
+                    <a href="/database?action={{el}}">{{el}}</a><br>
+                    {% endfor %}
+                    <a href="/database?action=sql_query">Выполнить запрос к базе данных</a><br>
+                    {%if msg%}
+                        <b>{{msg}}</b>
+                    {%endif%}
+                {%  elif action == "sql_query"  %}
+                    <form action="/database" method="POST">
+                    Запрос:<br>
+                    <textarea id="query" name="query"></textarea>
+                    <br>
+                    <input type="submit" value="Выполнить sql запрос">
+                    </form>
+                    {%if msg%}
+                        <b>{{msg}}</b>
+                    {%endif%}
+                {%else%}
+                    {%if collection != None%}
+                        {%for i in range(0,collection|length)%}
+                        <div id="db_item">
+                            {%for j in collection[i]%}
+                            {{j[0]}}:{{j[1]}}<br>
+                            {%endfor%}
+                        </div>
+                        {%endfor%}
+                    {%else%}
+                        Данные в таблице не обноруженны
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endif %}
     {% endif %}
-  </div>
  {%endblock%}

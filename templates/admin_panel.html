@@ -1,26 +1,42 @@
 {% extends 'base.html' %}
-{%block title%}
-Админ панель
-{%endblock%}
+    {%block title%}
+        Админ панель
+    {%endblock%}
 {%block main%}
-{%if action == "main"%}
-<a href="/admin_panel?action=send_message_to_user">Написать пользователю</a><br>
-<a href="/admin_panel?action=send_message_to_all">Написать от имени бота</a><br>
-{%if data%}
-{{data}}
-{% endif %}
-{%elif action == "send_message_to_all"%}
-<form action="/admin_panel" method="post">
-Сообщение:<input name="msg_to_all"><br>
-<input type="hidden" value="send_message_to_all" name="type_form">
-<input type="submit" value="Отправить сообщение">
-</form>
-{%else%}
-<form action="/admin_panel" method="post">
-<input type="hidden" value="send_message_to_user" name="type_form">
-Никнейм:<input name="nicname"><br>
-Сообщение:<input name="msg"><br>
-<input type="submit" value="Отправить сообщение">
-</form>
-{% endif %}
+{%if admin[0]%}
+    {%if action == "main"%}
+        Добро пожаловать <b>{{admin[1]['login']}}</b>,<br>
+        <a href="/admin_panel?action=send_message_to_user">Написать пользователю</a><br>
+        <a href="/admin_panel?action=send_message_to_all">Написать от имени бота</a><br>
+        <a href="/сhat" title="Пообщаться с другими администраторами">Чат</a><br>
+        <a href="/information"  title="Узнайте больше о сервере">Информация</a><br>
+        {% if admin[1]['level'] == 0 %}
+        <a href="/settings"  title="Зайти в настройки">Настройки</a><br>
+        <a href="/database?action=main"  title="Зайти в базу данных">База данных</a><br>
+        <a href="/log"  title="Узнайте больше о сервере">Логи</a><br>
+        {%endif%}
+        <a href="/admin_panel?action=logout"  title="Выйти из аккаунта">Выйти</a>
+    {%elif action == "send_message_to_all"%}
+        <form action="/admin_panel" method="post">
+            <input type="hidden" value="send_message_to_all" name="type_form"><br>
+            <label>Сообщение:<input name="msg_to_all"></label><br>
+            <input type="submit" value="Отправить сообщение">
+        </form>
+        {%if msg%}
+            {{msg}}
+        {%endif%}
+    {%elif action == "send_message_to_user"%}
+        <form action="/admin_panel" method="post">
+            <input type="hidden" value="send_message_to_user" name="type_form"><br>
+            <label>Никнейм:<input name="nickname"></label><br>
+            <label>Сообщение:<input name="msg"></label><br>
+            <input type="submit" value="Отправить сообщение">
+        </form>
+        {%if msg%}
+            {{msg}}
+        {%endif%}
+    {%else%}
+        Ошибка
+    {% endif %}
+{%endif%}
 {%endblock%}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{%block title%}Вход{%endblock%}
+{%block main%}
+<div class="login_form">
+    <form action="/login" method="POST">
+        <label>Логин:<input name="login"></label><br>
+        <label>Пароль:<input name="password"></label><br>
+        <input id="login_submit" type="submit" value="Войти">
+    </form>
+    {%if msg%}
+    <p style="color:red;">{{msg}}</p>
+    {%endif%}
+</div>
+{%endblock%}

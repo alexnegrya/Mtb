@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   	<meta charset="UTF-8">
     <title>{%block title%} {%endblock%}</title>
@@ -15,16 +15,23 @@
         Mtb
       </div>
       <nav>
-        <a href="/admin_panel?action=main" title="Администраторская панель" >Администраторская панель</a>
-        <a href="/settings"  title="Зайти в настройки">Настройки</a>
-        <a href="/database?action=main"  title="Зайти в базу данных">База данных</a>
-        <a href="/statistics"  title="Пасмотреть Статистику">Статистика</a>
-        <a href="/information"  title="Узнайте больше о сервере">Информация</a>
+         {%if admin[0]%}
+          <a href="/admin_panel?action=main">{{admin[1]['login']}}</a>
+          <a href="/chat" title="Пообщаться с другими администраторами">Чат</a>
+          <a href="/information"  title="Узнайте больше о сервере">Информация</a>
+          {% if admin[1]['level'] == 0 %}
+          <a href="/database?action=main"  title="Зайти в базу данных">База данных</a>
+          <a href="/settings"  title="Зайти в настройки">Настройки</a>
+          <a href="/log"  title="Прочитайте логи бота">Логи</a>
+          {%endif%}
+          {%else%}
+          <a href="/login" title="Войти в администраторский аккаунт" >Войти</a>
+         {%endif%}
     </nav>
   </header>
   <div id="main">
-    <div id="time">{{ date }}</div>
     {%block main%}{%endblock%}
+
   </div>
 </body>
 </html>

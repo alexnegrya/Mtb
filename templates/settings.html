@@ -3,25 +3,27 @@
 Настройки
 {%endblock%}
 {%block main%}
-<div id="settings">
-<form action="/settings" method="POST">
-    Токен от телеграмма: <input name="telegram_token" value="{{ con['token'] }}"><br>
-    Токен от openweathermap.org: <input name="owm_token" value="{{ con['weather_token'] }}"><br>
-    Сообщение при старте:<input name="start_msg" value="{{ con['on_start_msg'] }}"><br>
-    Количество выводимых новостей пользователям:<input name="iteration_news" value="{{ con['global_iteration_news'] }}"><br>
-    Пароль от администраторской панели:<input name="admin_panel_password" value="{{ con['admin_password'] }}"><br>
-    Частота чтения логов(1000 мс = 1 с):<input name="log_reading_frequency" value="{{ con['log_reading_frequency'] }}"><br>
-    База данных sqlite(True=Включенна,False=Выключенна):<input name="Sqlite" value="{{ con['sqlite'] }}"><br>
-    {% if con.sqlite == False %}
-    Пользователь к базе данных mysql:<input name="mysql_user" value="{{ con['mysql_user'] }}"><br>
-    Пароль к пользователю mysql:<input name="mysql_password" value="{{ con['mysql_password'] }}"><br>
-    База данных mysql:<input name="mysql_db" value="{{ con['mysql_db']}}"><br>
-    {% endif %}
-    <input type="submit" value="Создать новый конфиг">
-    {% if msg %}
-    <br>
-    <p style="color:green;">{{msg}}</p>
-    {% endif %}
-  </form>
-</div>
+    {%if admin[0]%}
+        {% if admin[1]['level'] == 0 %}
+            <div id="settings">
+                <form action="/settings" method="POST">
+                    <label>Токен от телеграмма: <input name="telegram_token" value="{{ con['token'] }}"></label><br>
+                    <label>Токен от openweathermap.org: <input name="owm_token" value="{{ con['weather_token'] }}"></label><br>
+                    <label>Сообщение при старте:<input name="start_msg" value="{{ con['on_start_msg'] }}"></label><br>
+                    <label>Количество выводимых новостей пользователям:<input name="iteration_news" value="{{ con['global_iteration_news'] }}"></label><br>
+                    <label>Пароль от администраторской панели:<input name="admin_panel_password" value="{{ con['admin_password'] }}"></label><br>
+                    <label>Частота чтения логов(1000 мс = 1 с):<input name="log_reading_frequency" value="{{ con['log_reading_frequency'] }}"></label><br>
+                        <input type="submit" value="Создать новый конфиг">
+                    {% if msg %}
+                        <br>
+                        <p style="color:green;">{{msg}}</p>
+                    {% endif %}
+                </form>
+            </div>
+        {%else%}
+            <b>Недостачно прав</b>
+        {%endif%}
+    {%else%}
+        <b>Ошибка токена</b>
+    {%endif%}
 {%endblock%}

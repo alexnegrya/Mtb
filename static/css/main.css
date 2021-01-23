@@ -38,24 +38,22 @@ nav {
   height: 70%;
   line-height: 30px;
   font-size: 1.1em;
-  text-align: center;
+  text-align: right;
 }
 nav > a {
   color: #343434;
   text-decoration: none;
-}
-
-nav > a:not(:last-child) {
-  margin-right: 4%;
+  margin-right: 6%;
 }
 
 nav > a:hover {
   color: #b0b0b0;
   text-decoration: underline;
 }
+
 /*Главный блок*/
 #main {
-  float: left;
+  float:left;
   margin-top: 10px;
 }
 #main a {
@@ -69,12 +67,6 @@ nav > a:hover {
 
 /*Стили для разных страниц и их элментов*/
 
-#time {
-  position: absolute;
-  width: auto;
-  height: auto;
-  right: 25px;
-}
 
 #txt {
   height: 510px;
@@ -86,8 +78,20 @@ nav > a:hover {
   height: 300px;
   width: 300px;
 }
-#sql {
+#query {
   height: 200px;
   width: 1095px;
   resize: none;
+}
+#pre {
+    white-space: pre;
+}
+#login_submit {
+    margin-top: 10px;
+    width: 50%;
+}
+
+#db_item {
+border: 1px solid silver;
+margin-bottom: 3px;
 }
