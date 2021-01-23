@@ -22,15 +22,11 @@ if system == "Linux" or system == "Windows":
     admin_login = input("Укажите логин для админки:")
     admin_password = input("Укажите пароль для админки:")
     requirements = [
-        "PyMySQL",
         "pyowm",
         "wikipedia",
         "beautifulsoup4",
         "pyTelegramBotAPI",
         "flask",
-        "numpy",
-        "matplotlib",
-        "cryptography",
         "pymongo==3.11.2"
     ]
     # Проверка скачен ли архив с файлами
