@@ -32,6 +32,9 @@ class Date:
         now = time.strftime("%d/%m/%Y %H:%M", self.date)
         return now
 
+    def get_seconds(self):
+        return int(self.seconds)
+
     def get_date_by_code(self, date_code):
         # Преоброзуем в вариант который запросили
         now = time.strftime(date_code, self.date)

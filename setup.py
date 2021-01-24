@@ -1,7 +1,7 @@
 import os
-import zipfile
 import signal
 import sys
+import zipfile
 from platform import system
 print("Устонавливаем requests")
 os.system("pip install requests -q")
@@ -61,9 +61,9 @@ users = db.users
 admins = db.admins
 chat = db.chat
 # Токен взятый с @BotFather
-token = '"""+bot_token+"""'
+token = '""" + bot_token + """'
 # Токен взятый с сайта openweathermap.org
-weather_token = '"""+weather_token+"""'
+weather_token = '""" + weather_token + """'
 # Получаем стандартный конфиг для pyowm
 config_dict = get_default_config()
 # Устонавливаем русский язык в этом конфиге
@@ -71,9 +71,9 @@ config_dict['language'] = 'ru'
 # Сообщение при старте
 on_start_msg = 'Бот запустился'
 # Сколько показывать новостей
-global_iteration_news = 10
+global_iteration_news = 0
 # Секретный ключ для входа в админ панель
-admin_password = '"""+admin_password+"""'
+admin_password = '""" + admin_password + """'
 # Частота чтения логов
 log_reading_frequency = 30000"""
     )
@@ -89,13 +89,21 @@ log_reading_frequency = 30000"""
     for module in requirements:
         os.system("pip3 install " + module + " -q")
     if system == "Linux":
-        print("Чтобы бот заработал устоновите базу mongodb")
+        print("""Осталось несколько шагов чтобы устоновить бота
+1)Устоновить mongodb
+2)Создать базу данных "Telegram"
+3)Создать в базе данных три коллекции users,chat,admins
+4)Создать документ в коллекции admins с полями login,password(хэшированный в md5),level(0=Супер админ,1=Админ)""")
         print("Устоновка завершена")
     else:
         r = requests.get("https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-4.4.3-signed.msi")
         with open("mongo.msi", "wb") as content:
             content.write(r.content)
-        print("Чтобы бот заработал устоновите базу mongodb по скачанному msi")
+        print("""Осталось несколько шагов чтобы устоновить бота
+1)Устоновить mongodb
+2)Создать базу данных "Telegram"
+3)Создать в базе данных три коллекции users,chat,admins
+4)Создать документ в коллекции admins с полями login,password(хэшированный в md5),level(0=Супер админ,1=Админ)""")
         print("Устоновка завершена")
 
 else:

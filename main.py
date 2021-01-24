@@ -134,7 +134,8 @@ if options == "Запуск":
                 "[Консоль] " + message.from_user.username + " использовал кнопку новости [" + Date.get_date() + "]\n"
             )
             # Получем html главной страницы сайта point.md
-            html = requests.get("https://point.md").text
+            html = requests.get("https://point.md/ru/novosti/?date_to="
+                                + str(Date.get_seconds()) + "&count=" + str(config.global_iteration_news)).text
             # Указываем что будем парсить и каким парсером
             # lxml-хороший быстрый парсер
             # html.parser - простой но позволяет работать со сломанными тэгами типо div></div
@@ -145,23 +146,16 @@ if options == "Запуск":
                     "[Предупреждение] Парсер lxml не найден!Будет использован html.parser [" + Date.get_date() + "]\n"
                 )
                 parser = BeautifulSoup(html, "html.parser")
-            # Создаём список куда будем класть все заголовки ссылки время статей
-            posts = []
             # В цикле собираем все заголовки время и ссылки в массив
             for el in parser.select(".post-list-container-item"):
                 title = el.select(".post-list-container-item-text-title > a")
                 time = el.select(".post-list-time")
                 links = [a["href"] for a in el.find_all("a", href=True) if a.text]
-                posts.append(
-                    {"title": title[0].text, "time": time[0].text, "href": links[0]}
-                )
-            # Также в цикле отсылаем сообщения с новостями
-            for post in posts[0: config.global_iteration_news]:
                 bot.send_message(
                     message.chat.id,
-                    post["title"]
-                    + "\nВремя:" + post["time"]
-                    + "\nСсылка:https://point.md/" + post["href"]
+                    title[0].text
+                    + "\nВремя:" + time[0].text
+                    + "\nСсылка:https://point.md/" + links[0]
                 )
         elif message.text == "Погода":
             # Выводим лог
