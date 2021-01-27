@@ -9,6 +9,7 @@ client = MongoClient('localhost', 27017)
 db = client.Telegram
 admins = db.admins
 
+
 class Color:
     purple = '\033[95m'
     cyan = '\033[96m'
@@ -46,6 +47,7 @@ def generate_string(length):
     rand_string = ''.join(random.sample(letters_and_digits, length))
     return rand_string
 
+
 def check_admin(token):
     if token is not None:
         admin_db = admins.find_one({"auth_token": token})
@@ -65,11 +67,9 @@ def get_collection(name_collection):
         return None
     else:
         values = []
-        keys = data['cursor']['firstBatch'][0].keys()
-        for i in range(0, len(data['cursor']['firstBatch'])):
+        for i in range(len(data['cursor']['firstBatch'])):
             values.append(list(data['cursor']['firstBatch'][i].items()))
         return values
-
 
 
 def get_all_versions():
@@ -96,5 +96,38 @@ def write_log(log, literals_in_console=False):
     else:
         console_log = log.replace("\n", "")
         print(console_log)
-    with open("logs.txt", "a", encoding="utf-8") as f:
-        f.write(log)
+    with open("etc/logs.txt", "a", encoding="utf-8") as f:
+        new_log = log.replace("[0m", "")
+        f.write(new_log)
+
+
+def binary_search(array, item):
+    # В переменных low и high хранятся границы той части списка, в которой выполняется поиск
+    low = 0
+    high = len(array) - 1
+
+    # Пока эта часть не сократится до одного элемента...
+    while low <= high:
+        # ... проверяем средний элемент
+        mid = (low + high) // 2
+        guess = array[mid]
+        # Значение найдено
+        if guess == item:
+            return mid
+        # Много
+        if guess > item:
+            high = mid - 1
+        # Мало
+        else:
+            low = mid + 1
+
+    # Значение не существует
+    return None
+
+
+def search(arr, key):
+    for i in range(len(arr)):
+        print(i)
+        if i == key:
+            return i
+    return None

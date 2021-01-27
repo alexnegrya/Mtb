@@ -60,9 +60,10 @@ def index():
 def log():
     # Если метод запроса POST отдаём логи
     if request.method == "POST":
-        # Открываем логи и держим их открытыми
+        # Читаем логи
         f = open("logs.txt")
         text = f.read()
+        f.close()
         return text
     else:
         # Иначе рендерим страничку html
