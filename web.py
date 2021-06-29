@@ -48,7 +48,6 @@ def login():
 @app.route("/")
 def index():
     versions = get_all_versions()
-    # Иначе рендерим страничку html
     return render_template("index.html",
                            log_reading_frequency=config.log_reading_frequency,
                            admin=check_admin(request.cookies.get('token')),
